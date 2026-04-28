@@ -24,10 +24,15 @@ EOF
 }
 
 tool_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
+build_tool_dir=$tool_dir/bin
 
 find_tool() {
     tool=$1
 
+    if [ -x "$build_tool_dir/$tool" ]; then
+        printf '%s/%s\n' "$build_tool_dir" "$tool"
+        return 0
+    fi
     if [ -x "$tool_dir/$tool" ]; then
         printf '%s/%s\n' "$tool_dir" "$tool"
         return 0
@@ -39,6 +44,9 @@ run_tool() {
     tool=$1
     shift
 
+    if [ -x "$build_tool_dir/$tool" ]; then
+        exec "$build_tool_dir/$tool" "$@"
+    fi
     if [ -x "$tool_dir/$tool" ]; then
         exec "$tool_dir/$tool" "$@"
     fi

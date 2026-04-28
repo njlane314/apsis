@@ -8,45 +8,67 @@ BINDIR ?= $(PREFIX)/bin
 INCLUDEDIR ?= $(PREFIX)/include
 LIBDIR ?= $(PREFIX)/lib
 MANDIR ?= $(PREFIX)/share/man
+BUILDDIR ?= bin
 
 LIB_OBJS = \
-	src/contract.o \
-	src/dwell_lib.o
+	$(BUILDDIR)/contract.o \
+	$(BUILDDIR)/dwell_lib.o
 
 WRAPPERS = apsis
 TOOLS = trip dwell atlas probe bind gate bound
+TOOL_BINS = \
+	$(BUILDDIR)/trip \
+	$(BUILDDIR)/dwell \
+	$(BUILDDIR)/atlas \
+	$(BUILDDIR)/probe \
+	$(BUILDDIR)/bind \
+	$(BUILDDIR)/gate \
+	$(BUILDDIR)/bound
 
-all: $(WRAPPERS) libapsis.a $(TOOLS)
+all: $(BUILDDIR)/libapsis.a $(TOOL_BINS)
 
-src/contract.o: src/contract.c src/apsis_contract.h
-	$(CC) $(CFLAGS) -Isrc -c src/contract.c -o src/contract.o
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
-src/dwell_lib.o: src/dwell_lib.c src/apsis_contract.h src/apsis_dwell.h
-	$(CC) $(CFLAGS) -Isrc -c src/dwell_lib.c -o src/dwell_lib.o
+$(BUILDDIR)/contract.o: src/contract.c src/apsis_contract.h
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc -c src/contract.c -o $(BUILDDIR)/contract.o
 
-libapsis.a: $(LIB_OBJS)
-	$(AR) rcs libapsis.a $(LIB_OBJS)
+$(BUILDDIR)/dwell_lib.o: src/dwell_lib.c src/apsis_contract.h src/apsis_dwell.h
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc -c src/dwell_lib.c -o $(BUILDDIR)/dwell_lib.o
 
-trip: src/trip.c src/apsis.h src/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Isrc src/trip.c libapsis.a -o trip
+$(BUILDDIR)/libapsis.a: $(LIB_OBJS)
+	mkdir -p $(BUILDDIR)
+	$(AR) rcs $(BUILDDIR)/libapsis.a $(LIB_OBJS)
 
-dwell: src/dwell.c src/apsis.h src/apsis_dwell.h libapsis.a
-	$(CC) $(CFLAGS) -Isrc src/dwell.c libapsis.a -o dwell
+$(BUILDDIR)/trip: src/trip.c src/apsis.h src/apsis_contract.h $(BUILDDIR)/libapsis.a
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc src/trip.c $(BUILDDIR)/libapsis.a -o $(BUILDDIR)/trip
 
-atlas: src/atlas.c
-	$(CC) $(CFLAGS) src/atlas.c -o atlas
+$(BUILDDIR)/dwell: src/dwell.c src/apsis.h src/apsis_dwell.h $(BUILDDIR)/libapsis.a
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc src/dwell.c $(BUILDDIR)/libapsis.a -o $(BUILDDIR)/dwell
 
-probe: src/probe.c src/apsis.h src/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Isrc src/probe.c libapsis.a -o probe
+$(BUILDDIR)/atlas: src/atlas.c
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) src/atlas.c -o $(BUILDDIR)/atlas
 
-bind: src/bind.c src/apsis.h src/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Isrc src/bind.c libapsis.a -o bind
+$(BUILDDIR)/probe: src/probe.c src/apsis.h src/apsis_contract.h $(BUILDDIR)/libapsis.a
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc src/probe.c $(BUILDDIR)/libapsis.a -o $(BUILDDIR)/probe
 
-gate: src/gate.c
-	$(CC) $(CFLAGS) src/gate.c -o gate
+$(BUILDDIR)/bind: src/bind.c src/apsis.h src/apsis_contract.h $(BUILDDIR)/libapsis.a
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -Isrc src/bind.c $(BUILDDIR)/libapsis.a -o $(BUILDDIR)/bind
 
-bound: src/bound.c
-	$(CC) $(CFLAGS) src/bound.c -o bound
+$(BUILDDIR)/gate: src/gate.c
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) src/gate.c -o $(BUILDDIR)/gate
+
+$(BUILDDIR)/bound: src/bound.c
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) src/bound.c -o $(BUILDDIR)/bound
 
 check: all
 	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
@@ -61,9 +83,10 @@ install: all
 	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(INCLUDEDIR) \
 	    $(DESTDIR)$(LIBDIR) $(DESTDIR)$(MANDIR)/man1 \
 	    $(DESTDIR)$(MANDIR)/man7
-	cp $(WRAPPERS) $(TOOLS) $(DESTDIR)$(BINDIR)/
+	cp $(WRAPPERS) $(DESTDIR)$(BINDIR)/
+	cp $(TOOL_BINS) $(DESTDIR)$(BINDIR)/
 	cp src/apsis*.h $(DESTDIR)$(INCLUDEDIR)/
-	cp libapsis.a $(DESTDIR)$(LIBDIR)/
+	cp $(BUILDDIR)/libapsis.a $(DESTDIR)$(LIBDIR)/
 	cp man/*.1 $(DESTDIR)$(MANDIR)/man1/
 	cp man/*.7 $(DESTDIR)$(MANDIR)/man7/
 
@@ -83,6 +106,7 @@ uninstall:
 	done
 
 clean:
-	rm -f $(LIB_OBJS) libapsis.a $(TOOLS)
+	rm -rf $(BUILDDIR)
+	rm -f src/contract.o src/dwell_lib.o libapsis.a $(TOOLS)
 
 .PHONY: all check guardrail-scan install uninstall clean

@@ -8,6 +8,13 @@ tmp=${TMPDIR:-/tmp}/apsis-check.$$
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 mkdir -p "$tmp"
 repo_dir=$(pwd)
+bin_dir=$repo_dir/bin
+APSIS=$repo_dir/apsis
+ATLAS=$bin_dir/atlas
+BIND=$bin_dir/bind
+PROBE=$bin_dir/probe
+TRIP=$bin_dir/trip
+LIBAPSIS=$bin_dir/libapsis.a
 
 layout_files="$tmp/layout-files"
 : > "$layout_files"
@@ -106,46 +113,46 @@ cat > "$tmp/missing-type.bind" <<'BIND'
 source no.type symbol no_type_symbol
 BIND
 
-./atlas check "$tmp/telemetry.atlas" > "$tmp/atlas-check.out"
+"$ATLAS" check "$tmp/telemetry.atlas" > "$tmp/atlas-check.out"
 grep -q 'telemetry=3 limits=4 commands=2 args=2' "$tmp/atlas-check.out"
 
-./apsis atlas check "$tmp/telemetry.atlas" > "$tmp/apsis-atlas-check.out"
+"$APSIS" atlas check "$tmp/telemetry.atlas" > "$tmp/apsis-atlas-check.out"
 grep -q 'telemetry=3 limits=4 commands=2 args=2' "$tmp/apsis-atlas-check.out"
 
-./atlas emit rules "$tmp/telemetry.atlas" > "$tmp/rules.trip"
+"$ATLAS" emit rules "$tmp/telemetry.atlas" > "$tmp/rules.trip"
 grep -q 'renderer.frame.ms .* warn   frame.slow cooldown 5s' "$tmp/rules.trip"
 grep -q 'worker.heartbeat.age .* stale .* error  worker.heartbeat.missing cooldown 30s' "$tmp/rules.trip"
 
-./apsis emit rules "$tmp/telemetry.atlas" > "$tmp/apsis-rules.trip"
+"$APSIS" emit rules "$tmp/telemetry.atlas" > "$tmp/apsis-rules.trip"
 cmp "$tmp/rules.trip" "$tmp/apsis-rules.trip"
 
-./atlas emit doc "$tmp/telemetry.atlas" > "$tmp/TELEMETRY.md"
+"$ATLAS" emit doc "$tmp/telemetry.atlas" > "$tmp/TELEMETRY.md"
 grep -q '| renderer.frame.ms | f64 | ms | Frame render time |' "$tmp/TELEMETRY.md"
 
-./atlas emit header "$tmp/telemetry.atlas" > "$tmp/telemetry_ids.h"
+"$ATLAS" emit header "$tmp/telemetry.atlas" > "$tmp/telemetry_ids.h"
 grep -q '#define APSIS_TEL_RENDERER_FRAME_MS "renderer.frame.ms"' "$tmp/telemetry_ids.h"
 grep -q '#define APSIS_CMD_WORKER_DUMP_STATE "worker.dump_state"' "$tmp/telemetry_ids.h"
 
-./bind check "$tmp/telemetry.bind" > "$tmp/bind-check.out"
+"$BIND" check "$tmp/telemetry.bind" > "$tmp/bind-check.out"
 grep -q 'sources=3 symbols=2 addrs=1 missing_types=0' "$tmp/bind-check.out"
 
-./bind emit watch ./drone_sim "$tmp/probe.atlas" > "$tmp/bind-watch.out"
+"$BIND" emit watch ./drone_sim "$tmp/probe.atlas" > "$tmp/bind-watch.out"
 grep -q -- '^--watch imu.temperature_c=f32@symbol:imu_temperature_c@object:./drone_sim$' \
     "$tmp/bind-watch.out"
 grep -q -- '^--watch control.loop_ms=f64@symbol:control_loop_ms@object:./drone_sim$' \
     "$tmp/bind-watch.out"
 
-./apsis bind check "$tmp/telemetry.bind" > "$tmp/apsis-bind-check.out"
+"$APSIS" bind check "$tmp/telemetry.bind" > "$tmp/apsis-bind-check.out"
 grep -q 'sources=3 symbols=2 addrs=1 missing_types=0' "$tmp/apsis-bind-check.out"
 
-./apsis doctor > "$tmp/apsis-doctor.out"
+"$APSIS" doctor > "$tmp/apsis-doctor.out"
 grep -q '^apsis doctor' "$tmp/apsis-doctor.out"
 grep -q 'ok  atlas' "$tmp/apsis-doctor.out"
 
 mkdir "$tmp/init-profile"
 (
     cd "$tmp/init-profile"
-    "$repo_dir/apsis" init --profile probe > init.out
+    "$APSIS" init --profile probe > init.out
     test -f telemetry.atlas
     test -f rules.trip
     test -f telemetry.bind
@@ -154,29 +161,29 @@ mkdir "$tmp/init-profile"
     grep -q 'source metric.alpha f32 symbol' telemetry.bind
 )
 
-./bind probe "$tmp/telemetry.bind" --object ./program > "$tmp/bind-probe.out"
+"$BIND" probe "$tmp/telemetry.bind" --object ./program > "$tmp/bind-probe.out"
 grep -q -- '^-s motor.temperature:f32:motor_state.temperature_c@./program$' "$tmp/bind-probe.out"
 grep -q -- '^-w imu.temperature_c:f32:0x7ffd1234$' "$tmp/bind-probe.out"
 grep -q -- '^-s cpp.temperature:f32:drone::cpp_temperature_c@./libdrone.so$' "$tmp/bind-probe.out"
 
-./bind json "$tmp/telemetry.bind" > "$tmp/bind.json"
+"$BIND" json "$tmp/telemetry.bind" > "$tmp/bind.json"
 grep -q '"source":"cpp.temperature"' "$tmp/bind.json"
 grep -q '"object":"./libdrone.so"' "$tmp/bind.json"
 
-./bind github "$tmp/telemetry.bind" > "$tmp/bind.md"
+"$BIND" github "$tmp/telemetry.bind" > "$tmp/bind.md"
 grep -q '| `imu.temperature_c` | `f32` | `addr` | `0x7ffd1234` | `-` |' "$tmp/bind.md"
 
-./bind check "$tmp/missing-type.bind" > "$tmp/bind-missing-type.out"
+"$BIND" check "$tmp/missing-type.bind" > "$tmp/bind-missing-type.out"
 grep -q 'missing_types=1' "$tmp/bind-missing-type.out"
 
 set +e
-./bind probe "$tmp/missing-type.bind" > "$tmp/bind-missing-type-probe.out" 2> "$tmp/bind-missing-type.err"
+"$BIND" probe "$tmp/missing-type.bind" > "$tmp/bind-missing-type-probe.out" 2> "$tmp/bind-missing-type.err"
 status=$?
 set -e
 test "$status" -eq 1
 grep -q 'probe output requires a type' "$tmp/bind-missing-type.err"
 
-./probe plan \
+"$PROBE" plan \
     --watch imu.temperature_c=f32@symbol:imu_temperature_c \
     --watch battery.voltage=f32@symbol:battery_voltage \
     -- ./drone_sim \
@@ -186,14 +193,14 @@ grep -q '  -s imu.temperature_c:f32:imu_temperature_c \\$' "$tmp/probe-plan.out"
 grep -q '  -s battery.voltage:f32:battery_voltage \\$' "$tmp/probe-plan.out"
 grep -q '  -- ./drone_sim$' "$tmp/probe-plan.out"
 
-./apsis plan \
+"$APSIS" plan \
     --watch imu.temperature_c=f32@symbol:imu_temperature_c \
     --watch battery.voltage=f32@symbol:battery_voltage \
     -- ./drone_sim \
     > "$tmp/apsis-probe-plan.out"
 cmp "$tmp/probe-plan.out" "$tmp/apsis-probe-plan.out"
 
-./probe plan \
+"$PROBE" plan \
     --watch imu.temperature_c=f32@addr:0x7ffd1234 \
     -- ./drone_sim \
     > "$tmp/probe-plan-addr.out"
@@ -205,7 +212,7 @@ telemetry a-b f64 ms "B"
 ATLAS
 
 set +e
-./atlas emit header "$tmp/collision.atlas" > "$tmp/collision.h" 2> "$tmp/collision.err"
+"$ATLAS" emit header "$tmp/collision.atlas" > "$tmp/collision.h" 2> "$tmp/collision.err"
 status=$?
 set -e
 test "$status" -eq 1
@@ -217,7 +224,7 @@ worker.queue.depth 1402
 SAMPLES
 
 set +e
-./trip check \
+"$TRIP" check \
     --rules "$tmp/rules.trip" \
     --summary \
     --github-summary "$tmp/github-summary.md" \
@@ -233,22 +240,22 @@ grep -q 'error	frame.very_slow	renderer.frame.ms	>' "$tmp/events.out"
 grep -q 'error	queue.backpressure	worker.queue.depth	>' "$tmp/events.out"
 grep -q 'error	worker.heartbeat.missing	worker.heartbeat.age	stale' "$tmp/events.out"
 
-./apsis trip check --rules "$tmp/rules.trip" --fail-on never \
+"$APSIS" trip check --rules "$tmp/rules.trip" --fail-on never \
     < "$tmp/samples.tlm" > "$tmp/apsis-events.out"
 grep -q 'warn	frame.slow	renderer.frame.ms	>' "$tmp/apsis-events.out"
 
-./atlas emit rules "$tmp/telemetry.atlas" | ./trip check --rules - --fail-on never > "$tmp/stdin-rules.out"
+"$ATLAS" emit rules "$tmp/telemetry.atlas" | "$TRIP" check --rules - --fail-on never > "$tmp/stdin-rules.out"
 test ! -s "$tmp/stdin-rules.out"
 
 if [ "$(uname -s)" = "Linux" ]; then
     "$CC" -std=c99 -O0 -g "$tmp/probe-target.c" -o "$tmp/probe-target"
 
-    ./bind emit watch "$tmp/probe-target" "$tmp/probe.atlas" --verify-types \
+    "$BIND" emit watch "$tmp/probe-target" "$tmp/probe.atlas" --verify-types \
         > "$tmp/bind-watch-verify.out"
     grep -q -- "^--watch imu.temperature_c=f32@symbol:imu_temperature_c@object:$tmp/probe-target$" \
         "$tmp/bind-watch-verify.out"
 
-    ./probe plan $(./bind emit watch "$tmp/probe-target" "$tmp/probe.atlas" \
+    "$PROBE" plan $("$BIND" emit watch "$tmp/probe-target" "$tmp/probe.atlas" \
         --verify-types) -- "$tmp/probe-target" > "$tmp/bind-watch-plan.out"
     grep -q "  -s imu.temperature_c:f32:imu_temperature_c@$tmp/probe-target \\\\$" \
         "$tmp/bind-watch-plan.out"
@@ -258,7 +265,7 @@ telemetry imu.temperature_c f64 C "IMU temperature with wrong probe type"
 ATLAS
 
     set +e
-    ./bind emit watch "$tmp/probe-target" "$tmp/probe-wrong-type.atlas" \
+    "$BIND" emit watch "$tmp/probe-target" "$tmp/probe-wrong-type.atlas" \
         --verify-types > "$tmp/bind-watch-wrong.out" 2> "$tmp/bind-watch-wrong.err"
     status=$?
     set -e
@@ -266,7 +273,7 @@ ATLAS
     grep -q "symbol 'imu_temperature_c' has size 4, expected 8 for f64" \
         "$tmp/bind-watch-wrong.err"
 
-    ./probe plan \
+    "$PROBE" plan \
         --watch imu.temperature_c=f32@symbol:imu_temperature_c \
         --watch battery.voltage=f32@symbol:battery_voltage \
         -- "$tmp/probe-target" \
@@ -276,41 +283,41 @@ ATLAS
     grep -q '  -s battery.voltage:f32:battery_voltage \\$' "$tmp/probe-plan.out"
     grep -q "  -- $tmp/probe-target" "$tmp/probe-plan.out"
 
-    ./probe plan \
+    "$PROBE" plan \
         --watch imu.temperature_c=f32@addr:0x7ffd1234 \
         -- "$tmp/probe-target" \
         > "$tmp/probe-plan-addr.out"
     grep -q '  -w imu.temperature_c:f32:0x7ffd1234 \\$' "$tmp/probe-plan-addr.out"
 
-    ./probe symbols "$tmp/probe-target" > "$tmp/probe-symbols.out"
+    "$PROBE" symbols "$tmp/probe-target" > "$tmp/probe-symbols.out"
     grep -q '^imu_temperature_c$' "$tmp/probe-symbols.out"
     grep -q '^battery_voltage$' "$tmp/probe-symbols.out"
 
-    ./probe symbols "$tmp/probe-target" --filter temp > "$tmp/probe-symbols-filter.out"
+    "$PROBE" symbols "$tmp/probe-target" --filter temp > "$tmp/probe-symbols-filter.out"
     grep -q '^imu_temperature_c$' "$tmp/probe-symbols-filter.out"
     test "$(grep -c '^battery_voltage$' "$tmp/probe-symbols-filter.out")" -eq 0
 
-    ./probe symbols "$tmp/probe-target" --filter imu_temperature_c --types \
+    "$PROBE" symbols "$tmp/probe-target" --filter imu_temperature_c --types \
         > "$tmp/probe-symbols-types.out"
     grep -q '^imu_temperature_c	kind=object	' "$tmp/probe-symbols-types.out"
     grep -q 'hint=i32/u32/f32' "$tmp/probe-symbols-types.out"
 
-    ./probe symbols "$tmp/probe-target" --types > "$tmp/probe-symbols-all-types.out"
+    "$PROBE" symbols "$tmp/probe-target" --types > "$tmp/probe-symbols-all-types.out"
     grep -q '^battery_voltage	kind=object	' "$tmp/probe-symbols-all-types.out"
 
-    ./probe \
+    "$PROBE" \
         -s imu.temperature_c:f32:imu_temperature_c \
         -n 1 \
         -- "$tmp/probe-target" \
         | grep '^imu.temperature_c='
 
-    ./probe run \
+    "$PROBE" run \
         --symbol imu.temperature_c=f32:imu_temperature_c \
         -n 1 \
         -- "$tmp/probe-target" \
         | grep '^imu.temperature_c='
 
-    ./probe run \
+    "$PROBE" run \
         --watch imu.temperature_c=f32@symbol:imu_temperature_c \
         -n 1 \
         -- "$tmp/probe-target" \
@@ -319,7 +326,7 @@ ATLAS
     "$tmp/probe-target" 2> "$tmp/probe-attach-target.err" &
     attach_pid=$!
     sleep 1
-    ./probe attach \
+    "$PROBE" attach \
         --pid "$attach_pid" \
         --symbol imu.temperature_c=f32:imu_temperature_c \
         -n 1 \
@@ -328,42 +335,42 @@ ATLAS
     wait "$attach_pid" 2>/dev/null || true
     grep '^imu.temperature_c=' "$tmp/probe-attach.out"
 
-    ./probe \
+    "$PROBE" \
         --json \
         -s control.loop_ms:f64:control_loop_ms \
         -n 1 \
         -- "$tmp/probe-target" \
         | grep '"control.loop_ms"'
 
-    ./probe \
+    "$PROBE" \
         --json \
         -s nonfinite.value:f64:nonfinite_value \
         -n 1 \
         -- "$tmp/probe-target" \
         | grep '"value":null,"nonfinite":"nan"'
 
-    ./probe \
+    "$PROBE" \
         --format limlog \
         -s battery.voltage:f32:battery_voltage \
         -n 1 \
         -- "$tmp/probe-target" \
         | grep ' key=battery.voltage '
 
-    PATH=/no-such-path ./probe \
+    PATH=/no-such-path "$PROBE" \
         -s imu.temperature_c:f32:imu_temperature_c \
         -n 1 \
         -- "$tmp/probe-target" \
         > "$tmp/no-nm.out"
     grep '^imu.temperature_c=' "$tmp/no-nm.out"
 
-    PATH="$tmp:$PATH" ./probe \
+    PATH="$tmp:$PATH" "$PROBE" \
         -s imu.temperature_c:f32:imu_temperature_c \
         -n 1 \
         -- probe-target \
         | grep '^imu.temperature_c='
 
     set +e
-    ./probe \
+    "$PROBE" \
         -s net.dropped_packets:u32:dropped_packets \
         -n 1 \
         --rules "$tmp/probe-rules.trip" \
@@ -376,7 +383,7 @@ ATLAS
     test "$status" -eq 1
     grep -q 'warn	net.packet_loss' "$tmp/probe-events.out"
 
-    ./probe \
+    "$PROBE" \
         -s net.dropped_packets:u32:dropped_packets \
         -n 1 \
         --rules "$tmp/probe-rules.trip" \
@@ -388,7 +395,7 @@ ATLAS
     grep -q 'warn	net.packet_loss' "$tmp/probe-both.out"
 
     set +e
-    ./probe -p $$ -s drone_state.imu.temperature_c:f32 > "$tmp/dwarf.out" 2> "$tmp/dwarf.err"
+    "$PROBE" -p $$ -s drone_state.imu.temperature_c:f32 > "$tmp/dwarf.out" 2> "$tmp/dwarf.err"
     status=$?
     set -e
     test "$status" -eq 2
@@ -411,13 +418,13 @@ int main() {
 }
 CPP
         c++ -O0 -g "$tmp/cpp-target.cpp" -o "$tmp/cpp-target"
-        ./probe \
+        "$PROBE" \
             -s cpp.temperature:f32:drone::cpp_temperature_c \
             -n 1 \
             -- "$tmp/cpp-target" \
             | grep '^cpp.temperature='
 
-        ./probe symbols "$tmp/cpp-target" --demangle --filter cpp_temperature_c \
+        "$PROBE" symbols "$tmp/cpp-target" --demangle --filter cpp_temperature_c \
             > "$tmp/cpp-symbols.out"
         grep -q '^drone::cpp_temperature_c$' "$tmp/cpp-symbols.out"
     fi
@@ -465,5 +472,5 @@ int main(void) {
 }
 C
 
-"$CC" $CFLAGS -Isrc -I"$tmp" "$tmp/embedded-main.c" libapsis.a -o "$tmp/apsis_embedded_example"
+"$CC" $CFLAGS -Isrc -I"$tmp" "$tmp/embedded-main.c" "$LIBAPSIS" -o "$tmp/apsis_embedded_example"
 "$tmp/apsis_embedded_example" > "$tmp/apsis_embedded_example.out"

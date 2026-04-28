@@ -88,7 +88,7 @@ probe plan \
   --watch metric.alpha=f32@symbol:metric_alpha \
   --watch metric.beta=f32@symbol:metric_beta \
   -- ./program
-cc -Isrc app.c libapsis.a
+cc -Isrc app.c bin/libapsis.a
 ```
 
 The wrapper is optional and keeps the underlying Unix tools intact:
@@ -120,8 +120,9 @@ make install PREFIX=/usr/local
 make uninstall PREFIX=/usr/local
 ```
 
-The code is C99, uses fixed-size storage, and has no runtime dependencies
-outside the C/POSIX toolchain.
+`make` writes generated objects, tools, and `libapsis.a` under `bin/`. The code
+is C99, uses fixed-size storage, and has no runtime dependencies outside the
+C/POSIX toolchain.
 
 ## Agent Guardrails
 
