@@ -88,7 +88,7 @@ probe plan \
   --watch metric.alpha=f32@symbol:metric_alpha \
   --watch metric.beta=f32@symbol:metric_beta \
   -- ./program
-cc -Iinclude app.c libapsis.a
+cc -Isrc app.c libapsis.a
 ```
 
 The wrapper is optional and keeps the underlying Unix tools intact:

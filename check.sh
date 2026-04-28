@@ -16,7 +16,7 @@ for path in README.md Makefile apsis; do
         printf '%s\n' "$path" >> "$layout_files"
     fi
 done
-for dir in docs include man tools; do
+for dir in docs man src; do
     if [ -d "$dir" ]; then
         find "$dir" -type f -print >> "$layout_files"
     fi
@@ -465,5 +465,5 @@ int main(void) {
 }
 C
 
-"$CC" $CFLAGS -Iinclude -I"$tmp" "$tmp/embedded-main.c" libapsis.a -o "$tmp/apsis_embedded_example"
+"$CC" $CFLAGS -Isrc -I"$tmp" "$tmp/embedded-main.c" libapsis.a -o "$tmp/apsis_embedded_example"
 "$tmp/apsis_embedded_example" > "$tmp/apsis_embedded_example.out"

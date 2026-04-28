@@ -10,43 +10,43 @@ LIBDIR ?= $(PREFIX)/lib
 MANDIR ?= $(PREFIX)/share/man
 
 LIB_OBJS = \
-	tools/contract.o \
-	tools/dwell_lib.o
+	src/contract.o \
+	src/dwell_lib.o
 
 WRAPPERS = apsis
 TOOLS = trip dwell atlas probe bind gate bound
 
 all: $(WRAPPERS) libapsis.a $(TOOLS)
 
-tools/contract.o: tools/contract.c include/apsis_contract.h
-	$(CC) $(CFLAGS) -Iinclude -c tools/contract.c -o tools/contract.o
+src/contract.o: src/contract.c src/apsis_contract.h
+	$(CC) $(CFLAGS) -Isrc -c src/contract.c -o src/contract.o
 
-tools/dwell_lib.o: tools/dwell_lib.c include/apsis_contract.h include/apsis_dwell.h
-	$(CC) $(CFLAGS) -Iinclude -c tools/dwell_lib.c -o tools/dwell_lib.o
+src/dwell_lib.o: src/dwell_lib.c src/apsis_contract.h src/apsis_dwell.h
+	$(CC) $(CFLAGS) -Isrc -c src/dwell_lib.c -o src/dwell_lib.o
 
 libapsis.a: $(LIB_OBJS)
 	$(AR) rcs libapsis.a $(LIB_OBJS)
 
-trip: tools/trip.c include/apsis.h include/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Iinclude tools/trip.c libapsis.a -o trip
+trip: src/trip.c src/apsis.h src/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Isrc src/trip.c libapsis.a -o trip
 
-dwell: tools/dwell.c include/apsis.h include/apsis_dwell.h libapsis.a
-	$(CC) $(CFLAGS) -Iinclude tools/dwell.c libapsis.a -o dwell
+dwell: src/dwell.c src/apsis.h src/apsis_dwell.h libapsis.a
+	$(CC) $(CFLAGS) -Isrc src/dwell.c libapsis.a -o dwell
 
-atlas: tools/atlas.c
-	$(CC) $(CFLAGS) tools/atlas.c -o atlas
+atlas: src/atlas.c
+	$(CC) $(CFLAGS) src/atlas.c -o atlas
 
-probe: tools/probe.c include/apsis.h include/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Iinclude tools/probe.c libapsis.a -o probe
+probe: src/probe.c src/apsis.h src/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Isrc src/probe.c libapsis.a -o probe
 
-bind: tools/bind.c include/apsis.h include/apsis_contract.h libapsis.a
-	$(CC) $(CFLAGS) -Iinclude tools/bind.c libapsis.a -o bind
+bind: src/bind.c src/apsis.h src/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Isrc src/bind.c libapsis.a -o bind
 
-gate: tools/gate/gate.c
-	$(CC) $(CFLAGS) tools/gate/gate.c -o gate
+gate: src/gate.c
+	$(CC) $(CFLAGS) src/gate.c -o gate
 
-bound: tools/bound/bound.c
-	$(CC) $(CFLAGS) tools/bound/bound.c -o bound
+bound: src/bound.c
+	$(CC) $(CFLAGS) src/bound.c -o bound
 
 check: all
 	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
@@ -62,7 +62,7 @@ install: all
 	    $(DESTDIR)$(LIBDIR) $(DESTDIR)$(MANDIR)/man1 \
 	    $(DESTDIR)$(MANDIR)/man7
 	cp $(WRAPPERS) $(TOOLS) $(DESTDIR)$(BINDIR)/
-	cp include/*.h $(DESTDIR)$(INCLUDEDIR)/
+	cp src/apsis*.h $(DESTDIR)$(INCLUDEDIR)/
 	cp libapsis.a $(DESTDIR)$(LIBDIR)/
 	cp man/*.1 $(DESTDIR)$(MANDIR)/man1/
 	cp man/*.7 $(DESTDIR)$(MANDIR)/man7/
@@ -71,7 +71,7 @@ uninstall:
 	for file in $(WRAPPERS) $(TOOLS); do \
 	    rm -f "$(DESTDIR)$(BINDIR)/$$file"; \
 	done
-	for file in include/*.h; do \
+	for file in src/apsis*.h; do \
 	    rm -f "$(DESTDIR)$(INCLUDEDIR)/$$(basename "$$file")"; \
 	done
 	rm -f "$(DESTDIR)$(LIBDIR)/libapsis.a"
