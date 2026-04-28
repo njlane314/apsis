@@ -1,0 +1,71 @@
+name: lim
+description: "Check key=value telemetry against lim threshold rules."
+
+inputs:
+  rules:
+    description: "Path to the lim rules file."
+    required: false
+    default: .lim/rules.lim
+  telemetry:
+    description: "Path to the telemetry file to read or create."
+    required: false
+    default: telemetry.tlm
+  command:
+    description: "Optional command that emits key=value telemetry on stdout."
+    required: false
+    default: ""
+  fail-on:
+    description: "Failure level passed to lim: error, warn, or never."
+    required: false
+    default: error
+  events:
+    description: "Path where JSONL limit events are written."
+    required: false
+    default: lim-events.jsonl
+  summary:
+    description: "Write limit events to the GitHub Actions step summary."
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Build lim
+      shell: bash
+      run: |
+        set -euo pipefail
+        cc -std=c99 -O2 -Wall -Wextra "$GITHUB_ACTION_PATH/lim.c" -o "$RUNNER_TEMP/lim"
+
+    - name: Generate telemetry
+      if: ${{ inputs.command != '' }}
+      shell: bash
+      env:
+        LIM_COMMAND: ${{ inputs.command }}
+      run: |
+        set -euo pipefail
+        bash -o pipefail -c "$LIM_COMMAND" > "${{ inputs.telemetry }}"
+
+    - name: Check limits
+      shell: bash
+      run: |
+        set +e
+        "$RUNNER_TEMP/lim" \
+          -r "${{ inputs.rules }}" \
+          --fail-on "${{ inputs.fail-on }}" \
+          --summary \
+          < "${{ inputs.telemetry }}" \
+          | tee "${{ inputs.events }}"
+        status=${PIPESTATUS[0]}
+        set -e
+
+        if [ "${{ inputs.summary }}" = "true" ]; then
+          {
+            echo "### lim report"
+            echo
+            echo '```json'
+            cat "${{ inputs.events }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        exit "$status"

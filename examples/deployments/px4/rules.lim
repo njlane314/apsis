@@ -1,0 +1,5 @@
+# key                       op  threshold  level  event-id
+estimator.failures          >   0          error  estimator.failure
+control_loop.max_ms         >   5.0        error  control_loop.slow
+sensor.timeout_count        >   0          warn   sensor.timeout
+mission.completed           !=  1          error  mission.incomplete

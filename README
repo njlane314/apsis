@@ -1,67 +1,31 @@
 LIM
 
-NAME
-     lim - tiny command-line telemetry limit checker
+PURPOSE
+     Check numeric telemetry in CI.
 
-DESCRIPTION
-     lim reads key=value telemetry, applies threshold rules, and emits JSONL
-     warning or error events on stdout. It is designed for ordinary native
-     programs and small CI-friendly telemetry checks.
+     Programs emit key=value lines. lim checks them against rules, emits JSONL
+     events, and exits nonzero when an error rule trips.
 
-EXAMPLE
-     Build and run the sample check:
+CLI
+     cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
+     ./my_test_or_benchmark | ./lim -r .lim/rules.lim
 
-         cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
-         ./lim -r examples/rules.lim --summary < examples/sample.tlm
+GITHUB ACTION
+     - uses: njlane314/lim@v1
+       with:
+         rules: .lim/rules.lim
+         command: ./my_test_or_benchmark
 
-     Input:
+RULES
+     Format:
 
-         temperature=82.4
-         queue.depth=1402
-         frame.ms=18.7
-         battery.voltage=11.9
-
-     Rules:
-
-         temperature      >   80         warn   temperature.high
-         queue.depth      >   1000       error  queue.backpressure
-         frame.ms         >   16.6       warn   frame.slow
-         battery.voltage  <   10.5       error  battery.low
-
-     Output:
-
-         {"ts":1760000000,"level":"warn","id":"temperature.high","key":"temperature","op":">","threshold":80,"value":82.400000000000006}
-         {"ts":1760000000,"level":"error","id":"queue.backpressure","key":"queue.depth","op":">","threshold":1000,"value":1402}
-         {"ts":1760000000,"level":"warn","id":"frame.slow","key":"frame.ms","op":">","threshold":16.600000000000001,"value":18.699999999999999}
-
-     lim exits with status 1 if an error rule trips. Use --fail-on warn to
-     fail on warnings too, or --fail-on never to always return success unless
-     input or rules are invalid.
-
-BUILD
-     Standard build:
-
-         make
-         make test
-
-     Direct build:
-
-         cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
-
-GITHUB ACTIONS
-     Copy-paste deployment examples are available in examples/github-actions/.
-
-     Common CI pattern:
-
-         ./my_test_or_benchmark | ./lim -r .groundline/rules.lim
-
-     The example workflow builds lim, checks generated telemetry against
-     .groundline/rules.lim, writes JSONL events to the GitHub Actions step
-     summary, uploads telemetry artifacts, and fails the workflow when an error
-     rule trips.
-
-RULE FORMAT
          key op number level event_id
+
+     Example:
+
+         frame.ms              > 16.6    warn   frame.slow
+         queue.depth           > 1000    error  queue.backpressure
+         tokens.per_second     < 50      error  inference.too_slow
 
      Operators:
 
@@ -71,56 +35,40 @@ RULE FORMAT
 
          info warn error
 
-     Comments start with #.
+INPUT
+     Accepted forms:
 
-INPUT FORMAT
-     lim accepts either:
+         frame.ms=18.7
+         queue.depth 1402
 
-         key=value
+OUTPUT
+     JSONL events on stdout:
 
-     or:
+         {"ts":1760000000,"level":"warn","id":"frame.slow","key":"frame.ms","op":">","threshold":16.600000000000001,"value":18.699999999999999}
 
-         key value
+     Exit status:
 
-     Keys may contain letters, digits, underscore, dash, dot, colon, and slash.
+         0  no failing rule
+         1  failing warn/error rule, depending on --fail-on
+         2  invalid input, rule, or argument
+
+BUILD
+     make
+     make test
+
+EXAMPLES
+     examples/github-actions/       reusable action workflow example
+     examples/deployments/          llama, zstd, and PX4-style adapters
+
+     Run them:
+
+         examples/github-actions/test-project.sh
+         examples/deployments/test-all.sh
 
 EMBEDDING
-     You can also compile lim.c into a C or C++ program. Define LIM_NO_MAIN to
-     omit the CLI entry point.
-
-         #include "lim.h"
-         #include <stdio.h>
-
-         int main(void) {
-             lim_ctx ctx;
-             char event[512];
-
-             lim_init(&ctx);
-             lim_add_rule(&ctx, "temperature", LIM_OP_GT, 80.0,
-                          LIM_LEVEL_WARN, "temperature.high");
-
-             if (lim_sample(&ctx, "temperature", 82.4, event,
-                            sizeof(event)) > 0) {
-                 puts(event);
-             }
-         }
-
-     Build embedded example:
+     Compile with -DLIM_NO_MAIN and include lim.h from a C or C++ test harness.
 
          cc -std=c99 -Wall -Wextra -O2 -DLIM_NO_MAIN example.c lim.c -o example
-
-DESIGN NOTES
-     lim is deliberately small:
-
-         one .c file and one .h file
-         C99
-         no external dependencies
-         stdin/stdout/stderr interface
-         JSONL output
-         nonzero exit status for CI use
-
-     The first version is intentionally a command-line filter, not a daemon,
-     dashboard, or cloud service.
 
 LICENSE
      MIT.

@@ -1,0 +1,2 @@
+case,compression_mb_per_sec,decompression_mb_per_sec,ratio,binary_bytes
+silesia,520,1800,2.91,1210000

@@ -7,7 +7,7 @@ request when an `error` rule trips.
 Core pattern:
 
 ```sh
-./my_test_or_benchmark | ./lim -r .groundline/rules.lim
+./my_test_or_benchmark | ./lim -r .lim/rules.lim
 ```
 
 Example telemetry:
@@ -26,14 +26,14 @@ compression.ratio=2.91
 The `project/` directory shows the files a user repo would add:
 
 ```text
-.groundline/
+.lim/
   rules.lim
 .github/
   workflows/
     lim.yml
 ```
 
-`project/.groundline/rules.lim` contains example thresholds for latency,
+`project/.lim/rules.lim` contains example thresholds for latency,
 backpressure, binary size, inference throughput, and parser throughput.
 
 `project/.github/workflows/lim.yml` builds a project, generates telemetry,
@@ -51,7 +51,7 @@ examples/github-actions/test-project.sh
 Zero-code integration:
 
 ```sh
-./bench_parser | awk '{print "parse.gbps="$1}' | ./lim -r .groundline/parser.lim
+./bench_parser | awk '{print "parse.gbps="$1}' | ./lim -r .lim/parser.lim
 ```
 
 Test harness integration:

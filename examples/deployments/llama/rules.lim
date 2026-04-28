@@ -1,0 +1,4 @@
+# key                           op  threshold  level  event-id
+prompt.tokens_per_second        <   500        error  prompt.too_slow
+generation.tokens_per_second    <   40         error  generation.too_slow
+memory.mb                       >   9000       warn   memory.high

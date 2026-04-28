@@ -24,7 +24,7 @@ cmake --build build -j2
 printf "binary.bytes=%s\n" "$(wc -c < build/my_program)" >> telemetry.tlm
 
 set +e
-./lim -r .groundline/rules.lim --summary < telemetry.tlm > lim-events.jsonl
+./lim -r .lim/rules.lim --summary < telemetry.tlm > lim-events.jsonl
 status=$?
 set -e
 

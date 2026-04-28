@@ -11,35 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build lim
-        run: cc -std=c99 -O2 -Wall -Wextra lim.c -o lim
-
       - name: Build project
         run: |
           cmake -S . -B build
           cmake --build build -j2
 
-      - name: Generate telemetry
-        run: |
-          ./build/my_benchmark > telemetry.tlm
-          printf "binary.bytes=%s\n" "$(wc -c < build/my_program)" >> telemetry.tlm
-
       - name: Check limits
-        shell: bash
-        run: |
-          set +e
-          ./lim -r .groundline/rules.lim --summary < telemetry.tlm | tee lim-events.jsonl
-          status=${PIPESTATUS[0]}
-
-          {
-            echo "### lim report"
-            echo
-            echo '```json'
-            cat lim-events.jsonl
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          exit "$status"
+        uses: njlane314/lim@v1
+        with:
+          rules: .lim/rules.lim
+          command: |
+            ./build/my_benchmark
+            printf "binary.bytes=%s\n" "$(wc -c < build/my_program)"
 
       - name: Upload lim artifacts
         if: always()
