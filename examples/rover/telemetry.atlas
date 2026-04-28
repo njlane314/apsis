@@ -1,0 +1,11 @@
+telemetry imu.temperature_c f32 C "IMU temperature"
+limit imu.temperature_c > 80 warn imu.overtemp cooldown 5s
+
+telemetry battery.voltage f32 V "Battery voltage"
+limit battery.voltage < 10.8 error battery.low cooldown 5s
+
+telemetry control.loop_ms f64 ms "Control-loop duration"
+limit control.loop_ms > 4 error control.overrun cooldown 1s
+
+command rover.dump_state "Write rover diagnostics"
+arg rover.dump_state path string "Output path"

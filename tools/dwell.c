@@ -1,4 +1,4 @@
-#include "ctc_dwell.h"
+#include "apsis_dwell.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -11,8 +11,8 @@ static void dwell_usage(FILE *f) {
         "usage: dwell --demo [-r rules.trip]\n"
         "\n"
         "Run a tiny in-process sampler demonstration. For production use,\n"
-        "include <ctc.h>, register C variables with ctc_dwell_watch_*(),\n"
-        "and call ctc_dwell_tick() at explicit sampling points.\n"
+        "include <apsis.h>, register C variables with apsis_dwell_watch_*(),\n"
+        "and call apsis_dwell_tick() at explicit sampling points.\n"
         "\n"
         "Options:\n"
         "  --demo                run the demonstration sampler\n"
@@ -58,37 +58,37 @@ int main(int argc, char **argv) {
     }
 
     {
-        ctc_dwell_ctx ctx;
+        apsis_dwell_ctx ctx;
         volatile uint32_t queue_depth = 1201;
         char err[256];
         int emitted;
 
-        ctc_dwell_init(&ctx);
-        ctc_dwell_set_event_callback(&ctx, dwell_put_event, NULL);
+        apsis_dwell_init(&ctx);
+        apsis_dwell_set_event_callback(&ctx, dwell_put_event, NULL);
 
         if (rules_path) {
-            if (ctc_dwell_load_rules(&ctx, rules_path, err, sizeof(err)) != 0) {
+            if (apsis_dwell_load_rules(&ctx, rules_path, err, sizeof(err)) != 0) {
                 fprintf(stderr, "dwell: %s\n", err);
                 return 2;
             }
-        } else if (ctc_dwell_add_rule(&ctx,
+        } else if (apsis_dwell_add_rule(&ctx,
                                       "worker.queue.depth",
-                                      CTC_GT,
+                                      APSIS_GT,
                                       1000.0,
-                                      CTC_ERROR,
+                                      APSIS_ERROR,
                                       "queue.backpressure") != 0) {
             fprintf(stderr, "dwell: failed to install demo rule\n");
             return 2;
         }
 
-        if (ctc_dwell_watch_u32(&ctx,
+        if (apsis_dwell_watch_u32(&ctx,
                                 "worker.queue.depth",
                                 &queue_depth) != 0) {
             fprintf(stderr, "dwell: failed to watch demo variable\n");
             return 2;
         }
 
-        emitted = ctc_dwell_tick(&ctx);
+        emitted = apsis_dwell_tick(&ctx);
         if (emitted < 0) return 2;
         return emitted > 0 ? 1 : 0;
     }

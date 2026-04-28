@@ -1,0 +1,95 @@
+.Dd April 28, 2026
+.Dt BIND 1
+.Os
+.Sh NAME
+.Nm bind
+.Nd compile APSIS probe binding manifests
+.Sh SYNOPSIS
+.Nm
+.Cm check
+.Op Fl -object Ar object
+.Ar file
+.Nm
+.Cm probe
+.Op Fl -object Ar object
+.Ar file
+.Nm
+.Cm json
+.Op Fl -object Ar object
+.Ar file
+.Nm
+.Cm github
+.Op Fl -object Ar object
+.Ar file
+.Nm
+.Fl h | -help
+.Sh DESCRIPTION
+.Nm
+reads a source-to-target binding manifest and emits either validation counts,
+.Xr probe 1
+watch arguments, JSON, or GitHub-flavored Markdown.
+.Pp
+A binding manifest keeps an APSIS telemetry key separate from the process
+symbol or fixed address that
+.Xr probe 1
+will read.
+.Sh COMMANDS
+.Bl -tag -width "github"
+.It Cm check
+Validate the manifest and print counts for sources, symbol bindings, address
+bindings, and entries with missing types.
+.It Cm probe
+Emit one
+.Xr probe 1
+watch argument per line.
+Each entry must have an explicit type.
+.It Cm json
+Emit a JSON array describing the bindings.
+.It Cm github
+Emit a GitHub-flavored Markdown table.
+.El
+.Sh OPTIONS
+.Bl -tag -width "--object object"
+.It Fl -object Ar object
+Supply a default object path for symbol bindings that do not specify their own
+.Cm object
+field.
+.It Fl h , Fl -help
+Show usage.
+.El
+.Sh MANIFEST FORMAT
+Manifest files are line-oriented.
+Blank lines are ignored.
+A
+.Sq #
+character starts a comment.
+.Pp
+Accepted source lines are:
+.Bd -literal -offset indent
+source <key> [type] symbol <symbol> [type <type>] [object <path>]
+source <key> [type] addr   <address> [type <type>] [object <path>]
+.Ed
+.Pp
+Types are:
+.Bd -literal -offset indent
+bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64
+.Ed
+.Sh EXIT STATUS
+.Nm
+returns 0 on success, 1 for invalid manifests or failed output generation, and
+2 for command-line usage errors.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+source motor.temperature f32 symbol motor_state.temperature_c
+source imu.temperature_c f32 addr 0x7ffd1234
+source cpp.temperature f32 symbol drone::cpp_temperature_c object ./libdrone.so
+.Ed
+.Bd -literal -offset indent
+bind check telemetry.bind
+bind probe telemetry.bind --object ./program > probe.args
+bind json telemetry.bind
+bind github telemetry.bind
+.Ed
+.Sh SEE ALSO
+.Xr probe 1 ,
+.Xr apsis 7

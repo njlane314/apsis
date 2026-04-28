@@ -1,0 +1,115 @@
+.Dd April 28, 2026
+.Dt TRIP 1
+.Os
+.Sh NAME
+.Nm trip
+.Nd check APSIS telemetry samples against rules
+.Sh SYNOPSIS
+.Nm
+.Fl r Ar rules.trip
+.Op Fl -fail-on Ar level
+.Op Fl -summary
+.Nm
+.Fl h | -help
+.Nm
+.Fl -version
+.Sh DESCRIPTION
+.Nm
+reads telemetry samples from standard input and emits an event for each rule
+that trips.
+.Pp
+Input samples may use either
+.Ar key=value
+or
+.Ar key value
+syntax:
+.Bd -literal -offset indent
+temperature=82.4
+queue.depth 1402
+.Ed
+.Pp
+Events are written to standard output as tab-separated records:
+.Bd -literal -offset indent
+<level> <event_id> <key> <op> <threshold> <value>
+.Ed
+.Pp
+Diagnostics and optional summaries are written to standard error.
+.Sh OPTIONS
+.Bl -tag -width "--fail-on level"
+.It Fl r Ar path , Fl -rules Ar path
+Load rules from
+.Ar path .
+Use
+.Sq -
+to read rules from standard input when telemetry is supplied separately.
+.It Fl -fail-on Ar level
+Return failure status when emitted events are at or above
+.Ar level .
+Accepted values are
+.Cm error ,
+.Cm warn ,
+.Cm info ,
+and
+.Cm never .
+The default is
+.Cm error .
+.It Fl -summary
+Print sample, event, level, and rule counts to standard error.
+.It Fl h , Fl -help
+Show usage.
+.It Fl -version
+Show version.
+.El
+.Sh RULES
+Rules are line-oriented.
+Blank lines and comments beginning with
+.Sq #
+are ignored.
+.Pp
+Rule forms are:
+.Bd -literal -offset indent
+<key> <op> <number> <level> <event_id>
+<key> stale <duration> <level> <event_id>
+<key> <op> <number> <level> <event_id> cooldown <duration>
+.Ed
+.Pp
+Operators are:
+.Bd -literal -offset indent
+> >= < <= == != stale
+.Ed
+.Pp
+Levels are:
+.Bd -literal -offset indent
+info warn error
+.Ed
+.Pp
+Durations may be bare seconds or may use the
+.Cm ms ,
+.Cm s ,
+.Cm m ,
+or
+.Cm h
+suffix.
+.Sh EXIT STATUS
+.Nm
+returns 0 when input and rules are valid and no event reaches the configured
+.Fl -fail-on
+level.
+It returns 1 when an event reaches that level and 2 for usage, rule, or input
+parsing errors.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+temperature > 80 warn temperature.high
+queue.depth > 1000 error queue.backpressure
+heartbeat stale 5s error heartbeat.missing
+temperature > 80 warn temperature.high cooldown 10s
+.Ed
+.Bd -literal -offset indent
+program | trip -r rules.trip
+program | trip -r rules.trip --fail-on warn --summary
+atlas rules telemetry.atlas > rules.trip
+.Ed
+.Sh SEE ALSO
+.Xr atlas 1 ,
+.Xr probe 1 ,
+.Xr apsis 7

@@ -1,0 +1,54 @@
+.Dd April 28, 2026
+.Dt DWELL 1
+.Os
+.Sh NAME
+.Nm dwell
+.Nd demonstrate APSIS in-process variable sampling
+.Sh SYNOPSIS
+.Nm
+.Fl -demo
+.Op Fl r Ar rules.trip
+.Nm
+.Fl h | -help
+.Nm
+.Fl -version
+.Sh DESCRIPTION
+.Nm
+runs a tiny in-process sampler demonstration.
+.Pp
+For production use, include
+.In apsis.h ,
+initialize an
+.Vt apsis_dwell_ctx ,
+register variables with
+.Fn apsis_dwell_watch_* ,
+and call
+.Fn apsis_dwell_tick
+at explicit sampling points in the program.
+.Sh OPTIONS
+.Bl -tag -width "--demo"
+.It Fl -demo
+Run the demonstration sampler.
+.It Fl r Ar path , Fl -rules Ar path
+Use a rules file for the demonstration.
+If omitted,
+.Nm
+installs a built-in rule for
+.Ar worker.queue.depth .
+.It Fl h , Fl -help
+Show usage.
+.It Fl -version
+Show version.
+.El
+.Sh EXIT STATUS
+.Nm
+returns 0 when the demonstration runs without emitting an event, 1 when an
+event is emitted, and 2 for usage or rule-loading errors.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+dwell --demo
+dwell --demo -r rules.trip
+.Ed
+.Sh SEE ALSO
+.Xr trip 1 ,
+.Xr apsis 7

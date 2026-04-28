@@ -1,0 +1,202 @@
+.Dd April 28, 2026
+.Dt PROBE 1
+.Os
+.Sh NAME
+.Nm probe
+.Nd sample typed variables from a Linux process
+.Sh SYNOPSIS
+.Nm
+.Cm symbols
+.Ar object
+.Op Fl -filter Ar text
+.Op Fl -demangle
+.Op Fl -types
+.Nm
+.Fl p Ar pid
+.Fl w Ar name:type:address
+.Op Fl i Ar ms
+.Op Fl n Ar count
+.Nm
+.Fl p Ar pid
+.Fl s Ar name:type:symbol
+.Op Fl o Ar object
+.Op Fl i Ar ms
+.Op Fl n Ar count
+.Nm
+.Fl s Ar name:type:symbol
+.Op Fl o Ar object
+.Op Fl i Ar ms
+.Op Fl n Ar count
+.Fl -
+.Ar program
+.Op Ar args ...
+.Nm
+.Fl h | -help
+.Sh DESCRIPTION
+.Nm
+reads typed values from another Linux process and emits APSIS telemetry
+samples.
+It can attach to an existing process by PID or launch a child process
+after
+.Fl - .
+.Pp
+By default,
+.Nm
+emits
+.Ar key=value
+samples.
+With
+.Fl r
+or
+.Fl -rules ,
+it evaluates samples through
+.Nm libapsis
+and emits rule events unless
+.Fl -emit
+selects sample output.
+.Pp
+.Nm
+does not bypass operating-system access controls.
+It is intended for processes you own in lab, debug, simulation, and CI
+settings.
+Linux ptrace scope,
+same-UID rules, container policy, and process capabilities may all block
+remote memory reads.
+.Sh COMMANDS
+.Bl -tag -width "symbols"
+.It Xo
+.Cm symbols
+.Ar object
+.Op Fl -filter Ar text
+.Op Fl -demangle
+.Op Fl -types
+.Xc
+List defined data symbols from an ELF object.
+With
+.Fl -types ,
+include ELF symbol kind, binding, size, address, and a size-based probe type
+hint.
+The reported information is not a source-level C type.
+.El
+.Sh WATCHES
+Address watches use:
+.Bd -literal -offset indent
+-w name:type:0xADDR
+.Ed
+.Pp
+Symbol watches use:
+.Bd -literal -offset indent
+-s name:type:symbol
+-s name:type:symbol@object
+.Ed
+.Pp
+Supported probe types are:
+.Bd -literal -offset indent
+i8 u8 i16 u16 i32 u32 i64 u64 f32 f64 bool
+.Ed
+.Sh OPTIONS
+.Bl -tag -width "--terminate-after-sampling"
+.It Fl p Ar pid , Fl -pid Ar pid
+Sample an existing process.
+.It Fl w Ar spec , Fl -watch-addr Ar spec
+Add an address watch.
+.It Fl s Ar spec , Fl -watch-symbol Ar spec
+Add a symbol watch.
+.It Fl o Ar object , Fl -object Ar object
+Use an ELF object for symbol resolution.
+When launching a target, the target
+executable is used by default if this option is omitted.
+.It Fl i Ar ms , Fl -interval-ms Ar ms
+Milliseconds between samples.
+The default is 1000.
+.It Fl n Ar count , Fl -count Ar count
+Number of samples to take.
+The default is 1.
+.It Fl -delay-ms Ar ms
+Delay after launching a child before sampling.
+The default is 100.
+.It Fl r Ar path , Fl -rules Ar path
+Load APSIS rules and evaluate samples with
+.Nm libapsis .
+.It Fl -emit Ar mode
+Select
+.Cm samples ,
+.Cm events ,
+or
+.Cm both .
+The default is
+.Cm events
+when rules are loaded and
+.Cm samples
+otherwise.
+.It Fl -fail-on Ar level
+Return failure status when loaded rules emit at or above
+.Ar level .
+Accepted values are
+.Cm error ,
+.Cm warn ,
+.Cm info ,
+and
+.Cm never .
+The default is
+.Cm error .
+.It Fl -format Ar format
+Select
+.Cm keyvalue ,
+.Cm jsonl ,
+or
+.Cm limlog
+sample output.
+The default is
+.Cm keyvalue .
+.It Fl -json
+Alias for
+.Fl -format Cm jsonl .
+.It Fl -terminate-after-sampling
+Terminate a launched target after sampling.
+This is the default.
+.It Fl -wait-child
+Wait for a launched target to exit naturally after sampling.
+.It Fl -leave-running
+Leave a launched target running after sampling.
+.It Fl v , Fl -verbose
+Print resolution details to standard error.
+.It Fl -ebpf , Fl -uprobe
+Reserved for future eBPF/uprobe mode and currently returns a usage error.
+.It Fl h , Fl -help
+Show usage.
+.El
+.Sh EXIT STATUS
+.Nm
+returns 0 when sampling succeeds and no configured rule failure is emitted.
+It may return 1 when a configured rule trips, when
+.Cm symbols
+finds no matching symbols, or when another non-usage operation reports
+failure.
+It returns 2 for usage errors, inaccessible processes, unsupported modes, or
+failed symbol/rule setup.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+probe -p 1234 -w temp:f32:0x7ffd01234000 -n 1
+probe -p 1234 -s temp:f32:imu_temperature_c -n 10 -i 100
+probe -s temp:f32:imu_temperature_c -n 10 -i 100 -- ./drone_sim
+probe symbols ./program
+probe symbols ./program --filter temp
+probe symbols ./program --demangle
+probe symbols ./program --types
+probe -s worker.queue.depth:u32:queue_depth --rules rules.trip --emit both -- ./program
+.Ed
+.Sh SEE ALSO
+.Xr bind 1 ,
+.Xr trip 1 ,
+.Xr apsis 7
+.Sh CAVEATS
+DWARF struct field paths and eBPF/uprobe argument capture are reserved
+capabilities, not active behavior.
+.Pp
+On non-Linux systems,
+.Nm
+exits with an error because it requires
+.Pa /proc
+and
+.Fn process_vm_readv .

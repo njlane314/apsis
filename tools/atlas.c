@@ -413,7 +413,11 @@ static int atlas_parse_limit(atlas_model *m, atlas_token toks[], size_t ntok,
     char msg[768];
 
     if (!(ntok == 6 || ntok == 8)) {
-        snprintf(msg, sizeof(msg), "%lu: expected: limit <key> <op> <value> <level> <event_id> [cooldown <duration>]", line_no);
+        snprintf(msg,
+                 sizeof(msg),
+                 "%lu: expected: limit <key> <op> <value> <level> "
+                 "<event_id> [cooldown <duration>]",
+                 line_no);
         atlas_set_err(err, err_cap, msg);
         return -1;
     }
@@ -770,6 +774,104 @@ static void atlas_ident_from_name(const char *name, char *out, size_t out_cap) {
     out[used] = '\0';
 }
 
+static int atlas_check_header_id(const char *kind,
+                                 const char *first_name,
+                                 unsigned long first_line,
+                                 const char *second_name,
+                                 unsigned long second_line,
+                                 const char *id,
+                                 char *err,
+                                 size_t err_cap) {
+    char msg[768];
+
+    snprintf(msg,
+             sizeof(msg),
+             "%lu: %s macro id collision '%s': '%s' also maps from line %lu key/name '%s'",
+             second_line,
+             kind,
+             id,
+             second_name,
+             first_line,
+             first_name);
+    atlas_set_err(err, err_cap, msg);
+    return -1;
+}
+
+static int atlas_validate_header_ids(const atlas_model *m,
+                                     char *err,
+                                     size_t err_cap) {
+    size_t i;
+    size_t j;
+
+    if (!m) return -1;
+
+    for (i = 0; i < m->telemetry_count; i++) {
+        char left[ATLAS_MAX_NAME * 2];
+
+        atlas_ident_from_name(m->telemetry[i].key, left, sizeof(left));
+        if (left[0] == '\0') {
+            char msg[768];
+            snprintf(msg,
+                     sizeof(msg),
+                     "%lu: telemetry key '%s' maps to an empty C macro id",
+                     m->telemetry[i].line_no,
+                     m->telemetry[i].key);
+            atlas_set_err(err, err_cap, msg);
+            return -1;
+        }
+
+        for (j = i + 1; j < m->telemetry_count; j++) {
+            char right[ATLAS_MAX_NAME * 2];
+
+            atlas_ident_from_name(m->telemetry[j].key, right, sizeof(right));
+            if (strcmp(left, right) == 0) {
+                return atlas_check_header_id("telemetry",
+                                             m->telemetry[i].key,
+                                             m->telemetry[i].line_no,
+                                             m->telemetry[j].key,
+                                             m->telemetry[j].line_no,
+                                             left,
+                                             err,
+                                             err_cap);
+            }
+        }
+    }
+
+    for (i = 0; i < m->command_count; i++) {
+        char left[ATLAS_MAX_NAME * 2];
+
+        atlas_ident_from_name(m->commands[i].name, left, sizeof(left));
+        if (left[0] == '\0') {
+            char msg[768];
+            snprintf(msg,
+                     sizeof(msg),
+                     "%lu: command name '%s' maps to an empty C macro id",
+                     m->commands[i].line_no,
+                     m->commands[i].name);
+            atlas_set_err(err, err_cap, msg);
+            return -1;
+        }
+
+        for (j = i + 1; j < m->command_count; j++) {
+            char right[ATLAS_MAX_NAME * 2];
+
+            atlas_ident_from_name(m->commands[j].name, right, sizeof(right));
+            if (strcmp(left, right) == 0) {
+                return atlas_check_header_id("command",
+                                             m->commands[i].name,
+                                             m->commands[i].line_no,
+                                             m->commands[j].name,
+                                             m->commands[j].line_no,
+                                             left,
+                                             err,
+                                             err_cap);
+            }
+        }
+    }
+
+    return 0;
+}
+
 static int atlas_valid_prefix(const char *s) {
     size_t i;
     if (!s || !*s) return 0;
@@ -836,6 +938,9 @@ static void atlas_usage(FILE *out) {
     fprintf(out,
         "usage:\n"
         "  atlas check FILE\n"
+        "  atlas emit rules FILE\n"
+        "  atlas emit doc FILE\n"
+        "  atlas emit header [--prefix PREFIX] FILE\n"
         "  atlas rules FILE\n"
         "  atlas doc FILE\n"
         "  atlas header [--prefix PREFIX] FILE\n"
@@ -899,6 +1004,73 @@ int main(int argc, char **argv) {
         return ATLAS_EXIT_OK;
     }
 
+    if (atlas_streq(cmd, "emit")) {
+        const char *kind;
+        const char *prefix = "APSIS_";
+        const char *path = NULL;
+        int i;
+
+        if (argc < 4) {
+            atlas_usage(stderr);
+            return ATLAS_EXIT_USAGE;
+        }
+
+        kind = argv[2];
+        if (atlas_streq(kind, "rules")) {
+            if (argc != 4) {
+                atlas_usage(stderr);
+                return ATLAS_EXIT_USAGE;
+            }
+            rc = atlas_load_or_print(argv[3], &model);
+            if (rc != ATLAS_EXIT_OK) return rc;
+            atlas_emit_rules(&model, stdout);
+            return ATLAS_EXIT_OK;
+        }
+        if (atlas_streq(kind, "doc")) {
+            if (argc != 4) {
+                atlas_usage(stderr);
+                return ATLAS_EXIT_USAGE;
+            }
+            rc = atlas_load_or_print(argv[3], &model);
+            if (rc != ATLAS_EXIT_OK) return rc;
+            atlas_emit_doc(&model, stdout);
+            return ATLAS_EXIT_OK;
+        }
+        if (atlas_streq(kind, "header")) {
+            for (i = 3; i < argc; i++) {
+                if (atlas_streq(argv[i], "--prefix") && i + 1 < argc) {
+                    prefix = argv[++i];
+                } else if (!path) {
+                    path = argv[i];
+                } else {
+                    atlas_usage(stderr);
+                    return ATLAS_EXIT_USAGE;
+                }
+            }
+            if (!path || !atlas_valid_prefix(prefix)) {
+                atlas_usage(stderr);
+                return ATLAS_EXIT_USAGE;
+            }
+            rc = atlas_load_or_print(path, &model);
+            if (rc != ATLAS_EXIT_OK) return rc;
+            {
+                char err[256];
+                err[0] = '\0';
+                if (atlas_validate_header_ids(&model, err, sizeof(err)) != 0) {
+                    fprintf(stderr, "atlas: %s\n",
+                            err[0] ? err : "header identifier collision");
+                    return ATLAS_EXIT_FAIL;
+                }
+            }
+            atlas_emit_header(&model, prefix, stdout);
+            return ATLAS_EXIT_OK;
+        }
+
+        fprintf(stderr, "atlas: unknown emit kind '%s'\n", kind);
+        atlas_usage(stderr);
+        return ATLAS_EXIT_USAGE;
+    }
+
     if (atlas_streq(cmd, "rules")) {
         if (argc != 3) {
             atlas_usage(stderr);
@@ -922,7 +1094,7 @@ int main(int argc, char **argv) {
     }
 
     if (atlas_streq(cmd, "header")) {
-        const char *prefix = "CTC_";
+        const char *prefix = "APSIS_";
         const char *path = NULL;
         int i;
         for (i = 2; i < argc; i++) {
@@ -941,6 +1113,15 @@ int main(int argc, char **argv) {
         }
         rc = atlas_load_or_print(path, &model);
         if (rc != ATLAS_EXIT_OK) return rc;
+        {
+            char err[256];
+            err[0] = '\0';
+            if (atlas_validate_header_ids(&model, err, sizeof(err)) != 0) {
+                fprintf(stderr, "atlas: %s\n",
+                        err[0] ? err : "header identifier collision");
+                return ATLAS_EXIT_FAIL;
+            }
+        }
         atlas_emit_header(&model, prefix, stdout);
         return ATLAS_EXIT_OK;
     }

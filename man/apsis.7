@@ -1,0 +1,142 @@
+.Dd April 28, 2026
+.Dt APSIS 7
+.Os
+.Sh NAME
+.Nm apsis
+.Nd contracts and telemetry tools for C and Unix pipelines
+.Sh DESCRIPTION
+.Nm
+is a small C library and a set of Unix tools for defining telemetry,
+checking numeric runtime contracts, and making CI fail when observed values
+violate configured limits.
+.Pp
+The usual workflow is:
+.Bd -literal -offset indent
+atlas rules telemetry.atlas > rules.trip
+bind probe telemetry.bind > probe.args
+program | trip -r rules.trip
+probe -s worker.queue.depth:u32:queue_depth -n 10 -- ./program | trip -r rules.trip
+.Ed
+.Pp
+The command-line tools are:
+.Bl -tag -width "probe"
+.It Xr atlas 1
+Compiles a source-of-truth telemetry dictionary into
+.Nm trip
+rules, Markdown documentation, or generated C constants.
+.It Xr bind 1
+Compiles source-to-symbol or source-to-address binding manifests into
+.Nm probe
+watch arguments, JSON, or GitHub-flavored Markdown.
+.It Xr trip 1
+Reads external
+.Ar key=value
+or
+.Ar key value
+telemetry samples and emits events when rules trip.
+.It Xr dwell 1
+Runs a small demonstration of the in-process sampling API.
+Production use
+links against
+.Nm libapsis
+and calls the
+.Fn apsis_dwell_watch_*
+and
+.Fn apsis_dwell_tick
+APIs from C.
+.It Xr probe 1
+Samples typed variables from another Linux process and emits telemetry
+records that can be piped into
+.Nm trip .
+.El
+.Sh RULES
+Rules use a line-oriented format:
+.Bd -literal -offset indent
+<key> <op> <number> <level> <event_id>
+<key> stale <duration> <level> <event_id>
+<key> <op> <number> <level> <event_id> cooldown <duration>
+.Ed
+.Pp
+Operators are
+.Cm >
+,
+.Cm >=
+,
+.Cm <
+,
+.Cm <=
+,
+.Cm ==
+,
+.Cm !=
+, and
+.Cm stale .
+Levels are
+.Cm info ,
+.Cm warn ,
+and
+.Cm error .
+.Pp
+Durations may be bare seconds or may use the
+.Cm ms ,
+.Cm s ,
+.Cm m ,
+or
+.Cm h
+suffix.
+.Sh DICTIONARIES
+.Nm atlas
+dictionaries use the following directives:
+.Bd -literal -offset indent
+telemetry <key> <type> <unit> <description...>
+limit     <key> <op> <value> <level> <event_id> [cooldown <duration>]
+command   <name> <description...>
+arg       <command> <name> <type> <description...>
+.Ed
+.Pp
+The aliases
+.Cm metric
+for
+.Cm telemetry
+and
+.Cm contract
+for
+.Cm limit
+are also accepted.
+.Sh BINDINGS
+.Nm bind
+manifests keep telemetry keys separate from target process symbols or fixed
+addresses:
+.Bd -literal -offset indent
+source motor.temperature f32 symbol motor_state.temperature_c
+source imu.temperature_c f32 addr 0x7ffd1234
+source cpp.temperature f32 symbol drone::cpp_temperature_c object ./libdrone.so
+.Ed
+.Sh SEE ALSO
+.Xr atlas 1 ,
+.Xr bind 1 ,
+.Xr dwell 1 ,
+.Xr probe 1 ,
+.Xr trip 1
+.Sh CAVEATS
+Rule evaluation uses
+.Vt double
+values.
+This is suitable for ordinary telemetry thresholds, but exact equality
+or ordering for large
+.Vt i64
+or
+.Vt u64
+counters above
+.No 2^53
+is not guaranteed.
+.Pp
+.Nm probe
+does not bypass operating-system access controls.
+Linux ptrace policy,
+same-UID rules, container policy, and process capabilities may all block
+remote memory reads.
+.Pp
+The repository guardrails are development guidance for this project.
+They are not a NASA compliance, flight readiness, safety certification, or
+security certification claim.

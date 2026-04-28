@@ -1,6 +1,6 @@
-# CTC Coding Standard
+# APSIS Coding Standard
 
-This is the project-local coding standard for `ctc`. It is informed by
+This is the project-local coding standard for `apsis`. It is informed by
 [GUARDRAILS](GUARDRAILS), but it is
 not a NASA compliance claim.
 
@@ -50,8 +50,8 @@ resolved or recorded in [NONCONFORMANCES](NONCONFORMANCES) and
 
 ## Naming And Formatting
 
-- Public library identifiers use the `ctc_` prefix.
-- Public dwell identifiers use the `ctc_dwell_` prefix.
+- Public library identifiers use the `apsis_` prefix.
+- Public dwell identifiers use the `apsis_dwell_` prefix.
 - Tool-local static helpers use the tool name as a prefix where practical.
 - Keep comments sparse and concrete. Prefer comments that explain invariants,
   bounds, and non-obvious error handling.

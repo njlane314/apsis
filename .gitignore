@@ -1,6 +1,7 @@
 *.o
 *.a
 /atlas
+/bind
 /dwell
 /probe
 /trip

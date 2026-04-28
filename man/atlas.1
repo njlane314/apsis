@@ -1,0 +1,113 @@
+.Dd April 28, 2026
+.Dt ATLAS 1
+.Os
+.Sh NAME
+.Nm atlas
+.Nd compile APSIS telemetry dictionaries
+.Sh SYNOPSIS
+.Nm
+.Cm check
+.Ar file
+.Nm
+.Cm rules
+.Ar file
+.Nm
+.Cm doc
+.Ar file
+.Nm
+.Cm header
+.Op Fl -prefix Ar prefix
+.Ar file
+.Nm
+.Fl h | -help
+.Nm
+.Fl -version
+.Sh DESCRIPTION
+.Nm
+reads an APSIS telemetry dictionary and validates or compiles it into another
+representation.
+.Pp
+Output is written to standard output, except diagnostics, which are written to
+standard error.
+.Sh COMMANDS
+.Bl -tag -width "header"
+.It Cm check Ar file
+Validate
+.Ar file
+and print a count summary.
+.It Cm rules Ar file
+Emit
+.Xr trip 1
+rules.
+.It Cm doc Ar file
+Emit Markdown documentation.
+.It Xo
+.Cm header
+.Op Fl -prefix Ar prefix
+.Ar file
+.Xc
+Emit generated C preprocessor constants for telemetry keys and command names.
+The default prefix is
+.Dv APSIS_ .
+The command fails if generated identifiers would collide.
+.El
+.Sh DICTIONARY FORMAT
+Dictionary files are line-oriented.
+Blank lines are ignored.
+Comments begin
+with
+.Sq #
+outside quoted strings.
+.Pp
+Accepted directives are:
+.Bd -literal -offset indent
+telemetry <key> <type> <unit> <description...>
+limit     <key> <op> <value> <level> <event_id> [cooldown <duration>]
+command   <name> <description...>
+arg       <command> <name> <type> <description...>
+.Ed
+.Pp
+The aliases
+.Cm metric
+for
+.Cm telemetry
+and
+.Cm contract
+for
+.Cm limit
+are accepted.
+.Pp
+Types are:
+.Bd -literal -offset indent
+bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 string enum duration
+.Ed
+.Pp
+Operators are:
+.Bd -literal -offset indent
+> >= < <= == != stale
+.Ed
+.Pp
+Levels are:
+.Bd -literal -offset indent
+info warn error
+.Ed
+.Sh EXIT STATUS
+.Nm
+returns 0 on success, 1 for invalid input dictionaries, and 2 for command-line
+usage errors.
+.Sh EXAMPLES
+.Bd -literal -offset indent
+telemetry renderer.frame.ms f64 ms "Frame render time"
+limit renderer.frame.ms > 16.6 warn frame.slow cooldown 5s
+command reset "Reset the worker"
+arg reset worker string "Worker name"
+.Ed
+.Bd -literal -offset indent
+atlas check telemetry.atlas
+atlas rules telemetry.atlas > rules.trip
+atlas doc telemetry.atlas > telemetry.md
+atlas header --prefix APSIS_ telemetry.atlas > telemetry_ids.h
+.Ed
+.Sh SEE ALSO
+.Xr trip 1 ,
+.Xr apsis 7

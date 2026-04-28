@@ -12,33 +12,40 @@ LIB_OBJS = \
 	lib/contract.o \
 	lib/dwell.o
 
-TOOLS = trip dwell atlas probe
+WRAPPERS = apsis
+TOOLS = trip dwell atlas probe bind
 
-all: libctc.a $(TOOLS)
+all: $(WRAPPERS) libapsis.a $(TOOLS)
 
-lib/contract.o: lib/contract.c include/ctc_contract.h
+lib/contract.o: lib/contract.c include/apsis_contract.h
 	$(CC) $(CFLAGS) -Iinclude -c lib/contract.c -o lib/contract.o
 
-lib/dwell.o: lib/dwell.c include/ctc_contract.h include/ctc_dwell.h
+lib/dwell.o: lib/dwell.c include/apsis_contract.h include/apsis_dwell.h
 	$(CC) $(CFLAGS) -Iinclude -c lib/dwell.c -o lib/dwell.o
 
-libctc.a: $(LIB_OBJS)
-	$(AR) rcs libctc.a $(LIB_OBJS)
+libapsis.a: $(LIB_OBJS)
+	$(AR) rcs libapsis.a $(LIB_OBJS)
 
-trip: tools/trip.c include/ctc.h include/ctc_contract.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/trip.c libctc.a -o trip
+trip: tools/trip.c include/apsis.h include/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Iinclude tools/trip.c libapsis.a -o trip
 
-dwell: tools/dwell.c include/ctc.h include/ctc_dwell.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/dwell.c libctc.a -o dwell
+dwell: tools/dwell.c include/apsis.h include/apsis_dwell.h libapsis.a
+	$(CC) $(CFLAGS) -Iinclude tools/dwell.c libapsis.a -o dwell
 
 atlas: tools/atlas.c
 	$(CC) $(CFLAGS) tools/atlas.c -o atlas
 
-probe: tools/probe.c include/ctc.h include/ctc_contract.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/probe.c libctc.a -o probe
+probe: tools/probe.c include/apsis.h include/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Iinclude tools/probe.c libapsis.a -o probe
+
+bind: tools/bind.c include/apsis.h include/apsis_contract.h libapsis.a
+	$(CC) $(CFLAGS) -Iinclude tools/bind.c libapsis.a -o bind
 
 check: all
 	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
+
+demo-probe: all
+	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./scripts/demo-probe.sh
 
 guardrail-scan:
 	@command -v rg >/dev/null 2>&1 || { echo "guardrail-scan: rg is required"; exit 2; }
@@ -48,11 +55,11 @@ guardrail-scan:
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(LIBDIR)
-	cp trip dwell atlas probe $(DESTDIR)$(BINDIR)/
+	cp apsis trip dwell atlas probe bind $(DESTDIR)$(BINDIR)/
 	cp include/*.h $(DESTDIR)$(INCLUDEDIR)/
-	cp libctc.a $(DESTDIR)$(LIBDIR)/
+	cp libapsis.a $(DESTDIR)$(LIBDIR)/
 
 clean:
-	rm -f $(LIB_OBJS) libctc.a $(TOOLS)
+	rm -f $(LIB_OBJS) libapsis.a $(TOOLS)
 
-.PHONY: all check guardrail-scan install clean
+.PHONY: all check demo-probe guardrail-scan install clean
