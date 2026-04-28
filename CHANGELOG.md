@@ -10,3 +10,4 @@
   `key=value` telemetry for `trip`.
 - Extended `probe` with direct ELF symbol lookup, basic C++ demangled-symbol
   matching, `--format`, and direct `--rules` evaluation.
+- Added NASA-derived coding guardrails and root agent instructions.

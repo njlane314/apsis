@@ -36,6 +36,13 @@ make check
 The code is C99, uses fixed-size storage, and has no runtime dependencies
 outside the C/POSIX toolchain.
 
+## Agent Guardrails
+
+Automated coding agents must read [AGENTS.md](AGENTS.md) and
+[docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml) before
+changing code. These guardrails are NASA-derived development guidance for this
+repository, not a NASA compliance claim.
+
 ## Library
 
 The shared contract engine lives in `libctc`.
