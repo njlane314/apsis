@@ -1,0 +1,7 @@
+*.o
+*.a
+/atlas
+/dwell
+/probe
+/trip
+/target

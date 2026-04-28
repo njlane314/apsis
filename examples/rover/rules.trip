@@ -1,0 +1,4 @@
+renderer.frame.ms                >      16.6         warn   frame.slow cooldown 5s
+renderer.frame.ms                >      33.3         error  frame.very_slow cooldown 5s
+worker.queue.depth               >      1000         error  queue.backpressure cooldown 10s
+worker.heartbeat.age             stale  5s           error  worker.heartbeat.missing cooldown 30s
