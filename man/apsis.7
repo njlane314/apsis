@@ -14,6 +14,7 @@ The usual workflow is:
 .Bd -literal -offset indent
 atlas rules telemetry.atlas > rules.trip
 bind probe telemetry.bind > probe.args
+bound learn samples.tlm --emit atlas-patch
 program | trip -r rules.trip
 probe -s worker.queue.depth:u32:queue_depth -n 10 -- ./program | trip -r rules.trip
 .Ed
@@ -28,6 +29,8 @@ rules, Markdown documentation, or generated C constants.
 Compiles source-to-symbol or source-to-address binding manifests into
 .Nm probe
 watch arguments, JSON, or GitHub-flavored Markdown.
+.It Xr bound 1
+Learns reviewable candidate limits from known-good numeric telemetry samples.
 .It Xr trip 1
 Reads external
 .Ar key=value
@@ -108,14 +111,16 @@ are also accepted.
 manifests keep telemetry keys separate from target process symbols or fixed
 addresses:
 .Bd -literal -offset indent
-source motor.temperature f32 symbol motor_state.temperature_c
-source imu.temperature_c f32 addr 0x7ffd1234
-source cpp.temperature f32 symbol drone::cpp_temperature_c object ./libdrone.so
+source metric.alpha f32 symbol metric_alpha
+source metric.beta f32 addr 0x7ffd1234
+source metric.gamma f32 symbol namespace::metric_gamma object ./libmodule.so
 .Ed
 .Sh SEE ALSO
 .Xr atlas 1 ,
 .Xr bind 1 ,
+.Xr bound 1 ,
 .Xr dwell 1 ,
+.Xr gate 1 ,
 .Xr probe 1 ,
 .Xr trip 1
 .Sh CAVEATS

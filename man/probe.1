@@ -177,14 +177,14 @@ It returns 2 for usage errors, inaccessible processes, unsupported modes, or
 failed symbol/rule setup.
 .Sh EXAMPLES
 .Bd -literal -offset indent
-probe -p 1234 -w temp:f32:0x7ffd01234000 -n 1
-probe -p 1234 -s temp:f32:imu_temperature_c -n 10 -i 100
-probe -s temp:f32:imu_temperature_c -n 10 -i 100 -- ./drone_sim
+probe -p 1234 -w metric.alpha:f32:0x7ffd01234000 -n 1
+probe -p 1234 -s metric.alpha:f32:metric_alpha -n 10 -i 100
+probe -s metric.alpha:f32:metric_alpha -n 10 -i 100 -- ./program
 probe symbols ./program
-probe symbols ./program --filter temp
+probe symbols ./program --filter metric
 probe symbols ./program --demangle
 probe symbols ./program --types
-probe -s worker.queue.depth:u32:queue_depth --rules rules.trip --emit both -- ./program
+probe -s metric.beta:u32:metric_beta --rules rules.trip --emit both -- ./program
 .Ed
 .Sh SEE ALSO
 .Xr bind 1 ,

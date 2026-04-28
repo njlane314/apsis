@@ -7,21 +7,22 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 INCLUDEDIR ?= $(PREFIX)/include
 LIBDIR ?= $(PREFIX)/lib
+MANDIR ?= $(PREFIX)/share/man
 
 LIB_OBJS = \
-	lib/contract.o \
-	lib/dwell.o
+	tools/contract.o \
+	tools/dwell_lib.o
 
 WRAPPERS = apsis
-TOOLS = trip dwell atlas probe bind
+TOOLS = trip dwell atlas probe bind gate bound
 
 all: $(WRAPPERS) libapsis.a $(TOOLS)
 
-lib/contract.o: lib/contract.c include/apsis_contract.h
-	$(CC) $(CFLAGS) -Iinclude -c lib/contract.c -o lib/contract.o
+tools/contract.o: tools/contract.c include/apsis_contract.h
+	$(CC) $(CFLAGS) -Iinclude -c tools/contract.c -o tools/contract.o
 
-lib/dwell.o: lib/dwell.c include/apsis_contract.h include/apsis_dwell.h
-	$(CC) $(CFLAGS) -Iinclude -c lib/dwell.c -o lib/dwell.o
+tools/dwell_lib.o: tools/dwell_lib.c include/apsis_contract.h include/apsis_dwell.h
+	$(CC) $(CFLAGS) -Iinclude -c tools/dwell_lib.c -o tools/dwell_lib.o
 
 libapsis.a: $(LIB_OBJS)
 	$(AR) rcs libapsis.a $(LIB_OBJS)
@@ -41,11 +42,16 @@ probe: tools/probe.c include/apsis.h include/apsis_contract.h libapsis.a
 bind: tools/bind.c include/apsis.h include/apsis_contract.h libapsis.a
 	$(CC) $(CFLAGS) -Iinclude tools/bind.c libapsis.a -o bind
 
+gate: tools/gate/gate.c
+	$(CC) $(CFLAGS) tools/gate/gate.c -o gate
+
+bound: tools/bound/bound.c
+	$(CC) $(CFLAGS) tools/bound/bound.c -o bound
+
 check: all
 	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
-
-demo-probe: all
-	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./scripts/demo-probe.sh
+	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./tests/test_gate.sh
+	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./tests/test_bound.sh
 
 guardrail-scan:
 	@command -v rg >/dev/null 2>&1 || { echo "guardrail-scan: rg is required"; exit 2; }
@@ -54,12 +60,31 @@ guardrail-scan:
 	@echo "guardrail-scan: ok"
 
 install: all
-	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(LIBDIR)
-	cp apsis trip dwell atlas probe bind $(DESTDIR)$(BINDIR)/
+	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(INCLUDEDIR) \
+	    $(DESTDIR)$(LIBDIR) $(DESTDIR)$(MANDIR)/man1 \
+	    $(DESTDIR)$(MANDIR)/man7
+	cp $(WRAPPERS) $(TOOLS) $(DESTDIR)$(BINDIR)/
 	cp include/*.h $(DESTDIR)$(INCLUDEDIR)/
 	cp libapsis.a $(DESTDIR)$(LIBDIR)/
+	cp man/*.1 $(DESTDIR)$(MANDIR)/man1/
+	cp man/*.7 $(DESTDIR)$(MANDIR)/man7/
+
+uninstall:
+	for file in $(WRAPPERS) $(TOOLS); do \
+	    rm -f "$(DESTDIR)$(BINDIR)/$$file"; \
+	done
+	for file in include/*.h; do \
+	    rm -f "$(DESTDIR)$(INCLUDEDIR)/$$(basename "$$file")"; \
+	done
+	rm -f "$(DESTDIR)$(LIBDIR)/libapsis.a"
+	for file in man/*.1; do \
+	    rm -f "$(DESTDIR)$(MANDIR)/man1/$$(basename "$$file")"; \
+	done
+	for file in man/*.7; do \
+	    rm -f "$(DESTDIR)$(MANDIR)/man7/$$(basename "$$file")"; \
+	done
 
 clean:
 	rm -f $(LIB_OBJS) libapsis.a $(TOOLS)
 
-.PHONY: all check demo-probe guardrail-scan install clean
+.PHONY: all check guardrail-scan install uninstall clean

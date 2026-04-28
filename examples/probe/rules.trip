@@ -1,3 +1,0 @@
-imu.temperature_c > 80 warn imu.overtemp cooldown 5s
-battery.voltage < 10.8 error battery.low cooldown 5s
-control.loop_ms > 4 error control.overrun cooldown 1s

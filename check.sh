@@ -16,7 +16,7 @@ for path in README.md Makefile apsis; do
         printf '%s\n' "$path" >> "$layout_files"
     fi
 done
-for dir in docs examples include man scripts tools; do
+for dir in docs include man tests tools; do
     if [ -d "$dir" ]; then
         find "$dir" -type f -print >> "$layout_files"
     fi
@@ -109,9 +109,6 @@ BIND
 ./atlas check "$tmp/telemetry.atlas" > "$tmp/atlas-check.out"
 grep -q 'telemetry=3 limits=4 commands=2 args=2' "$tmp/atlas-check.out"
 
-./atlas check examples/rover/telemetry.atlas > "$tmp/example-rover-check.out"
-grep -q 'telemetry=3 limits=3 commands=1 args=1' "$tmp/example-rover-check.out"
-
 ./apsis atlas check "$tmp/telemetry.atlas" > "$tmp/apsis-atlas-check.out"
 grep -q 'telemetry=3 limits=4 commands=2 args=2' "$tmp/apsis-atlas-check.out"
 
@@ -152,9 +149,9 @@ mkdir "$tmp/init-profile"
     test -f telemetry.atlas
     test -f rules.trip
     test -f telemetry.bind
-    grep -q 'imu.temperature_c' telemetry.atlas
-    grep -q 'battery.voltage' rules.trip
-    grep -q 'source imu.temperature_c f32 symbol' telemetry.bind
+    grep -q 'metric.alpha' telemetry.atlas
+    grep -q 'metric.beta' rules.trip
+    grep -q 'source metric.alpha f32 symbol' telemetry.bind
 )
 
 ./bind probe "$tmp/telemetry.bind" --object ./program > "$tmp/bind-probe.out"
@@ -201,11 +198,6 @@ cmp "$tmp/probe-plan.out" "$tmp/apsis-probe-plan.out"
     -- ./drone_sim \
     > "$tmp/probe-plan-addr.out"
 grep -q '  -w imu.temperature_c:f32:0x7ffd1234 \\$' "$tmp/probe-plan-addr.out"
-
-CC="$CC" CFLAGS="$CFLAGS" sh ./scripts/demo-probe.sh \
-    > "$tmp/demo-probe.out" 2> "$tmp/demo-probe.err"
-grep -q 'demo-probe:' "$tmp/demo-probe.out" || \
-    grep -q 'probe | trip demo' "$tmp/demo-probe.out"
 
 cat > "$tmp/collision.atlas" <<'ATLAS'
 telemetry a.b f64 ms "A"

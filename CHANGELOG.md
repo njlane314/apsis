@@ -10,11 +10,15 @@
   `key=value` telemetry for `trip`.
 - Added `bind` as a source-to-symbol/address binding manifest compiler for
   `probe` arguments, JSON, and GitHub Markdown summaries.
+- Added `gate` as a one-command `atlas -> bind -> probe -> trip` workflow
+  runner that verifies generated watch bindings before sampling.
+- Added `bound` to learn reviewable candidate contract limits from known-good
+  telemetry samples.
+- Added `make uninstall` for staged or prefix-based package cleanup.
 - Added an optional `apsis` wrapper script that dispatches to the standalone
   Unix tools without replacing them.
 - Added `doctor` and `init --profile probe` to the wrapper.
-- Added `make demo-probe`, probe example files, and a global-variable probe
-  recipe.
+- Removed scenario-specific example and demo-script directories.
 - Extended `probe` with direct ELF symbol lookup, basic C++ demangled-symbol
   matching, `--format`, and direct `--rules` evaluation.
 - Added NASA-derived coding guardrails and root agent instructions.
@@ -22,8 +26,7 @@
   dynamic allocation from `probe` ELF symbol lookup.
 - Flattened tool sources to `tools/trip.c`, `tools/dwell.c`, `tools/atlas.c`,
   and `tools/probe.c`.
-- Moved `make check` coverage into `check.sh` and removed the `tests/`
-  directory.
+- Moved core shared C sources under `tools/`.
 - Made `check.sh` self-contained and removed the `examples/` directory.
 - Moved documentation guardrail files into the root as `GUARDRAILS`, `WAIVERS`,
   and `NONCONFORMANCES`.

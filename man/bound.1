@@ -1,0 +1,80 @@
+.Dd April 28, 2026
+.Dt BOUND 1
+.Os
+.Sh NAME
+.Nm bound
+.Nd learn reviewable contract suggestions from telemetry samples
+.Sh SYNOPSIS
+.Nm
+.Cm learn
+.Op Ar files ...
+.Op Fl -emit Cm report|atlas-patch|json
+.Op Fl -margin Ar percent
+.Op Fl -min-samples Ar count
+.Op Fl -include Ar text
+.Op Fl -exclude Ar text
+.Op Fl -level Cm warn|error
+.Sh DESCRIPTION
+.Nm
+reads known-good numeric telemetry samples and summarizes observed operating
+ranges.
+It can emit candidate
+.Nm atlas
+limit lines, but these are suggestions for human review and are not safety
+evidence.
+.Pp
+Input may use
+.Ar key=value ,
+.Ar key value ,
+probe limlog records containing
+.Ar key=
+and
+.Ar value= ,
+or simple probe JSONL sample records containing
+.Ar name
+or
+.Ar key
+and numeric
+.Ar value .
+Contract event lines are ignored.
+.Sh OPTIONS
+.Bl -tag -width "--min-samples"
+.It Fl -emit Cm report|atlas-patch|json
+Select the output mode.
+The default is
+.Cm report .
+.It Fl -margin Ar percent
+Set the learned bound margin.
+Accepts values such as
+.Cm 20%
+or
+.Cm 0.20 .
+The default is 20%.
+.It Fl -min-samples Ar count
+Require at least
+.Ar count
+samples before suggesting limits.
+The default is 20.
+.It Fl -include Ar text
+Only include keys containing
+.Ar text .
+.It Fl -exclude Ar text
+Exclude keys containing
+.Ar text .
+.It Fl -level Cm warn|error
+Set the generated limit level.
+The default is
+.Cm error .
+.It Fl h , Fl -help
+Show usage.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+bound learn samples.tlm --emit report
+bound learn samples.tlm --emit atlas-patch
+bound learn runs/*.log --margin 20% --min-samples 30 --emit atlas-patch
+.Ed
+.Sh SEE ALSO
+.Xr atlas 1 ,
+.Xr probe 1 ,
+.Xr trip 1

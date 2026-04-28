@@ -6,8 +6,10 @@ usage() {
 usage:
   apsis atlas ARGS...
   apsis bind ARGS...
+  apsis bound ARGS...
   apsis doctor
   apsis dwell ARGS...
+  apsis gate ARGS...
   apsis init --profile probe
   apsis probe ARGS...
   apsis trip ARGS...
@@ -47,7 +49,7 @@ doctor() {
     status=0
 
     printf 'apsis doctor\n'
-    for tool in atlas bind dwell probe trip; do
+    for tool in atlas bind bound dwell gate probe trip; do
         if path=$(find_tool "$tool" 2>/dev/null); then
             printf 'ok  %-6s %s\n' "$tool" "$path"
         else
@@ -89,21 +91,21 @@ write_probe_profile() {
     fi
 
     cat > telemetry.atlas <<'EOF'
-telemetry imu.temperature_c f32 C "IMU temperature"
-limit imu.temperature_c > 80 warn imu.overtemp cooldown 5s
+telemetry metric.alpha f32 units "Primary metric"
+limit metric.alpha > 100 warn metric.alpha.high cooldown 5s
 
-telemetry battery.voltage f32 V "Battery voltage"
-limit battery.voltage < 10.8 error battery.low cooldown 5s
+telemetry metric.beta f32 units "Secondary metric"
+limit metric.beta < 10 error metric.beta.low cooldown 5s
 EOF
 
     cat > rules.trip <<'EOF'
-imu.temperature_c > 80 warn imu.overtemp cooldown 5s
-battery.voltage < 10.8 error battery.low cooldown 5s
+metric.alpha > 100 warn metric.alpha.high cooldown 5s
+metric.beta < 10 error metric.beta.low cooldown 5s
 EOF
 
     cat > telemetry.bind <<'EOF'
-source imu.temperature_c f32 symbol imu_temperature_c
-source battery.voltage f32 symbol battery_voltage
+source metric.alpha f32 symbol metric_alpha
+source metric.beta f32 symbol metric_beta
 EOF
 
     printf 'created telemetry.atlas\n'
@@ -154,7 +156,7 @@ case "$1" in
         shift
         init_profile "$@"
         ;;
-    atlas|bind|dwell|probe|trip)
+    atlas|bind|bound|dwell|gate|probe|trip)
         tool=$1
         shift
         run_tool "$tool" "$@"

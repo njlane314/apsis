@@ -6,8 +6,8 @@
  *   source <key> [type] addr   <address> [type <type>] [object <path>]
  *
  * Examples:
- *   source motor.temperature f32 symbol motor_state.temperature_c
- *   source imu.temperature_c f32 addr 0x7ffd1234
+ *   source metric.alpha f32 symbol metric_alpha
+ *   source metric.beta f32 addr 0x7ffd1234
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -83,8 +83,8 @@ static void bind_usage(FILE *f) {
             "  bind json   [--object OBJECT] FILE\n"
             "  bind github [--object OBJECT] FILE\n\n"
             "Atlas watch emit:\n"
-            "  telemetry imu.temperature_c f32 C \"IMU temperature\"\n"
-            "  -> --watch imu.temperature_c=f32@symbol:imu_temperature_c@object:OBJECT\n\n"
+            "  telemetry metric.alpha f32 units \"Primary metric\"\n"
+            "  -> --watch metric.alpha=f32@symbol:metric_alpha@object:OBJECT\n\n"
             "Binding lines:\n"
             "  source <key> [type] symbol <symbol> [type <type>] [object <path>]\n"
             "  source <key> [type] addr   <address> [type <type>] [object <path>]\n");

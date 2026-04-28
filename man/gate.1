@@ -1,0 +1,91 @@
+.Dd April 28, 2026
+.Dt GATE 1
+.Os
+.Sh NAME
+.Nm gate
+.Nd run the atlas-bind-probe-trip workflow
+.Sh SYNOPSIS
+.Nm
+.Fl -atlas Ar file
+.Fl -binary Ar path
+.Op Fl -count Ar count
+.Op Fl -interval Ar duration
+.Op Fl -fail-on Cm info|warn|error|never
+.Op Fl -format Cm text|jsonl|github
+.Op Fl -summary-file Ar path
+.Op Fl -explain
+.Op Fl -keep-temp
+.Fl -
+.Ar command
+.Op Ar args ...
+.Sh DESCRIPTION
+.Nm
+is the one-command workflow runner for APSIS.
+It orchestrates the standalone Unix tools without replacing them:
+.Bd -literal -offset indent
+atlas emit rules "$atlas" > "$tmp/rules.trip"
+bind emit watch "$binary" "$atlas" --verify-types > "$tmp/watch.args"
+probe run $(cat "$tmp/watch.args") --emit samples -- "$@" |
+    trip check --rules "$tmp/rules.trip" --fail-on "$fail_on"
+.Ed
+.Pp
+The generated files are temporary and are removed unless
+.Fl -keep-temp
+is supplied.
+Human diagnostics are written to standard error.
+.Sh OPTIONS
+.Bl -tag -width "--summary-file path"
+.It Fl -atlas Ar file
+Required Atlas dictionary.
+.It Fl -binary Ar path
+Required binary or object used by
+.Xr bind 1
+for symbol/type verification.
+.It Fl -count Ar count
+Sample count passed to
+.Xr probe 1 .
+The default is 10.
+.It Fl -interval Ar duration
+Sample interval.
+Values may use
+.Cm ms
+or
+.Cm s .
+The default is 100ms.
+.It Fl -fail-on Cm info|warn|error|never
+Contract failure level passed to
+.Xr trip 1 .
+The default is
+.Cm error .
+.It Fl -format Cm text|jsonl|github
+Select output format.
+The default is
+.Cm text .
+.It Fl -summary-file Ar path
+Append a GitHub Markdown summary when using
+.Cm github
+format.
+.It Fl -explain
+Print the generated workflow plan before running it.
+.It Fl -keep-temp
+Keep generated temporary rule and watch files for debugging.
+.It Fl h , Fl -help
+Show usage.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+gate --atlas telemetry.atlas --binary ./program -- ./program
+gate --atlas telemetry.atlas --binary ./program \
+    --count 20 --interval 100ms --fail-on error -- ./program
+.Ed
+.Sh EXIT STATUS
+.Nm
+returns 0 when the workflow succeeds, 1 when
+.Xr trip 1
+reports contract violations, and 2 for usage or tool orchestration errors.
+.Sh SEE ALSO
+.Xr atlas 1 ,
+.Xr bind 1 ,
+.Xr probe 1 ,
+.Xr trip 1 ,
+.Xr apsis 7

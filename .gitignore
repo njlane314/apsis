@@ -2,7 +2,9 @@
 *.a
 /atlas
 /bind
+/bound
 /dwell
+/gate
 /probe
 /trip
 /target

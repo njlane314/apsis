@@ -80,12 +80,13 @@ returns 0 on success, 1 for invalid manifests or failed output generation, and
 2 for command-line usage errors.
 .Sh EXAMPLES
 .Bd -literal -offset indent
-source motor.temperature f32 symbol motor_state.temperature_c
-source imu.temperature_c f32 addr 0x7ffd1234
-source cpp.temperature f32 symbol drone::cpp_temperature_c object ./libdrone.so
+source metric.alpha f32 symbol metric_alpha
+source metric.beta f32 addr 0x7ffd1234
+source metric.gamma f32 symbol namespace::metric_gamma object ./libmodule.so
 .Ed
 .Bd -literal -offset indent
 bind check telemetry.bind
+bind emit watch ./program telemetry.atlas --verify-types
 bind probe telemetry.bind --object ./program > probe.args
 bind json telemetry.bind
 bind github telemetry.bind
