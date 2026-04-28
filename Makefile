@@ -46,6 +46,12 @@ check: all
 	$(CC) $(CFLAGS) -Iinclude -Iexamples/rover examples/embedded/main.c libctc.a -o /tmp/ctc_embedded_example
 	/tmp/ctc_embedded_example >/tmp/ctc_embedded_example.out
 
+guardrail-scan:
+	@command -v rg >/dev/null 2>&1 || { echo "guardrail-scan: rg is required"; exit 2; }
+	@! rg -n '\b(malloc|calloc|realloc|free)\s*\(' --glob '*.c' --glob '*.h'
+	@! rg -n '\b(goto|setjmp|longjmp)\b' --glob '*.c' --glob '*.h'
+	@echo "guardrail-scan: ok"
+
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(LIBDIR)
 	cp trip dwell atlas probe $(DESTDIR)$(BINDIR)/
@@ -55,4 +61,4 @@ install: all
 clean:
 	rm -f $(LIB_OBJS) libctc.a $(TOOLS)
 
-.PHONY: all check install clean
+.PHONY: all check guardrail-scan install clean

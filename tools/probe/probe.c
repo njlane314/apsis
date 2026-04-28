@@ -26,6 +26,9 @@
 #ifndef PROBE_MAX_PATH
 #define PROBE_MAX_PATH 4096
 #endif
+#ifndef PROBE_MAX_ELF_SECTIONS
+#define PROBE_MAX_ELF_SECTIONS 4096
+#endif
 
 typedef enum probe_type { P_I8, P_U8, P_I16, P_U16, P_I32, P_U32, P_I64, P_U64, P_F32, P_F64, P_BOOL } probe_type;
 typedef enum probe_output { OUT_KEYVALUE, OUT_JSONL, OUT_LIMLOG } probe_output;
@@ -293,6 +296,32 @@ static int symbol_name_matches(const char *raw, const char *want) {
     return 0;
 }
 
+static int read_elf_string(int fd,
+                           const Elf64_Shdr *strsec,
+                           Elf64_Word name_offset,
+                           char *out,
+                           size_t cap) {
+    size_t i;
+
+    if (!strsec || !out || cap == 0) return -1;
+    if ((Elf64_Xword)name_offset >= strsec->sh_size) return -1;
+
+    for (i = 0; i + 1 < cap; ++i) {
+        char c;
+        Elf64_Xword pos = (Elf64_Xword)name_offset + (Elf64_Xword)i;
+
+        if (pos >= strsec->sh_size) return -1;
+        if (read_exact_at(fd, (off_t)(strsec->sh_offset + pos), &c, 1) != 0) {
+            return -1;
+        }
+        out[i] = c;
+        if (c == '\0') return 0;
+    }
+
+    out[cap - 1] = '\0';
+    return -1;
+}
+
 static int scan_elf64_symbols(int fd,
                               const Elf64_Shdr *sections,
                               size_t section_count,
@@ -302,7 +331,6 @@ static int scan_elf64_symbols(int fd,
                               int *matches) {
     const Elf64_Shdr *symsec = &sections[sym_index];
     const Elf64_Shdr *strsec;
-    char *strings;
     size_t count;
     size_t i;
 
@@ -310,24 +338,16 @@ static int scan_elf64_symbols(int fd,
     if (symsec->sh_entsize == 0) return -1;
 
     strsec = &sections[symsec->sh_link];
-    if (strsec->sh_size == 0 || strsec->sh_size > 64u * 1024u * 1024u) return -1;
-
-    strings = (char *)malloc((size_t)strsec->sh_size);
-    if (!strings) return -1;
-    if (read_exact_at(fd, (off_t)strsec->sh_offset, strings, (size_t)strsec->sh_size) != 0) {
-        free(strings);
-        return -1;
-    }
+    if (strsec->sh_size == 0) return -1;
 
     count = (size_t)(symsec->sh_size / symsec->sh_entsize);
     for (i = 0; i < count; ++i) {
         Elf64_Sym sym;
         unsigned char type;
-        const char *name;
+        char name[PROBE_MAX_PATH];
         off_t off = (off_t)(symsec->sh_offset + (Elf64_Off)(i * symsec->sh_entsize));
 
         if (read_exact_at(fd, off, &sym, sizeof(sym)) != 0) {
-            free(strings);
             return -1;
         }
         if (sym.st_name == 0 || sym.st_name >= strsec->sh_size) continue;
@@ -336,25 +356,25 @@ static int scan_elf64_symbols(int fd,
         type = ELF64_ST_TYPE(sym.st_info);
         if (type == STT_FILE || type == STT_SECTION) continue;
 
-        name = strings + sym.st_name;
+        if (read_elf_string(fd, strsec, sym.st_name, name, sizeof(name)) != 0) {
+            return -1;
+        }
         if (symbol_name_matches(name, symbol)) {
             *out = (uintptr_t)sym.st_value;
             (*matches)++;
             if (*matches > 1) {
-                free(strings);
                 return 1;
             }
         }
     }
 
-    free(strings);
     return 0;
 }
 
 static int resolve_symbol_elf(const char *object, const char *symbol, uintptr_t *out) {
     int fd;
     Elf64_Ehdr ehdr;
-    Elf64_Shdr *sections;
+    Elf64_Shdr sections[PROBE_MAX_ELF_SECTIONS];
     int matches = 0;
     size_t i;
 
@@ -375,15 +395,13 @@ static int resolve_symbol_elf(const char *object, const char *symbol, uintptr_t 
         close(fd);
         return -1;
     }
-
-    sections = (Elf64_Shdr *)calloc((size_t)ehdr.e_shnum, sizeof(*sections));
-    if (!sections) {
+    if (ehdr.e_shnum > PROBE_MAX_ELF_SECTIONS) {
         close(fd);
         return -1;
     }
+
     if (read_exact_at(fd, (off_t)ehdr.e_shoff, sections,
                       (size_t)ehdr.e_shnum * sizeof(*sections)) != 0) {
-        free(sections);
         close(fd);
         return -1;
     }
@@ -398,13 +416,11 @@ static int resolve_symbol_elf(const char *object, const char *symbol, uintptr_t 
         rc = scan_elf64_symbols(fd, sections, (size_t)ehdr.e_shnum,
                                 i, symbol, out, &matches);
         if (rc != 0 || matches > 1) {
-            free(sections);
             close(fd);
             return matches > 1 ? -2 : -1;
         }
     }
 
-    free(sections);
     close(fd);
     return matches == 1 ? 0 : -1;
 }

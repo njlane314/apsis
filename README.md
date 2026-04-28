@@ -39,9 +39,11 @@ outside the C/POSIX toolchain.
 ## Agent Guardrails
 
 Automated coding agents must read [AGENTS.md](AGENTS.md) and
-[docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml) before
-changing code. These guardrails are NASA-derived development guidance for this
-repository, not a NASA compliance claim.
+[CODING_STANDARD.md](CODING_STANDARD.md) before changing code. The detailed
+NASA-derived guardrails live in
+[docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml). These
+guardrails are development guidance for this repository, not a NASA compliance
+claim.
 
 ## Library
 

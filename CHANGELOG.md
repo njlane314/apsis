@@ -11,3 +11,5 @@
 - Extended `probe` with direct ELF symbol lookup, basic C++ demangled-symbol
   matching, `--format`, and direct `--rules` evaluation.
 - Added NASA-derived coding guardrails and root agent instructions.
+- Added the project coding standard, waiver/nonconformance logs, and removed
+  dynamic allocation from `probe` ELF symbol lookup.

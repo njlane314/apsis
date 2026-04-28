@@ -3,6 +3,7 @@
 Before writing, reviewing, or modifying code in this repository, read:
 
 - [docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml)
+- [CODING_STANDARD.md](CODING_STANDARD.md)
 
 Apply those guardrails as repository policy for agent work. This project is not
 claiming NASA compliance; the guardrails are an agent-readable distillation for
@@ -21,6 +22,8 @@ When changing C code:
 - Check return values and validate boundary inputs.
 - Do not suppress compiler or static-analysis findings without a written
   rationale.
+- Record approved deviations in `docs/WAIVERS.md` and unresolved findings in
+  `docs/NONCONFORMANCES.md`.
 - Run `make check CFLAGS='-std=c99 -Wall -Wextra -Wpedantic -Werror -O2'`
   before delivery when the toolchain supports it.
 
