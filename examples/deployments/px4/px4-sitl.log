@@ -1,4 +1,0 @@
-PX4_SIM metric estimator.failures 0
-PX4_SIM metric control_loop.max_ms 4.2
-PX4_SIM metric sensor.timeout_count 1
-PX4_SIM metric mission.completed 1

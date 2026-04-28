@@ -1,74 +1,59 @@
 LIM
 
 PURPOSE
-     Check numeric telemetry in CI.
+Check numeric telemetry in CI.
 
-     Programs emit key=value lines. lim checks them against rules, emits JSONL
-     events, and exits nonzero when an error rule trips.
+Programs emit key=value lines. lim checks them against rules, emits JSONL
+events, and exits nonzero when an error rule trips.
 
-CLI
-     cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
-     ./my_test_or_benchmark | ./lim -r .lim/rules.lim
-
-GITHUB ACTION
-     - uses: njlane314/lim@v1
-       with:
-         rules: .lim/rules.lim
-         command: ./my_test_or_benchmark
+USAGE
+cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
+./some_test_or_benchmark | ./lim -r .lim/rules.lim
 
 RULES
-     Format:
+Format:
 
-         key op number level event_id
+key op number level event_id
 
-     Example:
+Examples:
 
-         frame.ms              > 16.6    warn   frame.slow
-         queue.depth           > 1000    error  queue.backpressure
-         tokens.per_second     < 50      error  inference.too_slow
+frame.ms              > 16.6    warn   frame.slow
+queue.depth           > 1000    error  queue.backpressure
+tokens.per_second     < 50      error  inference.too_slow
+heartbeat             stale 5s  error  heartbeat.missing
+temperature           > 80      warn   temperature.high cooldown 10s
 
-     Operators:
+Operators:
 
-         > >= < <= == !=
+> >= < <= == != stale
 
-     Levels:
+Levels:
 
-         info warn error
+info warn error
 
 INPUT
-     Accepted forms:
+Accepted forms:
 
-         frame.ms=18.7
-         queue.depth 1402
+frame.ms=18.7
+queue.depth 1402
 
 OUTPUT
-     JSONL events on stdout:
+JSONL events on stdout:
 
-         {"ts":1760000000,"level":"warn","id":"frame.slow","key":"frame.ms","op":">","threshold":16.600000000000001,"value":18.699999999999999}
+{"ts":1760000000,"level":"warn","id":"frame.slow","key":"frame.ms","op":">","threshold":16.600000000000001,"value":18.699999999999999}
 
-     Exit status:
+Exit status:
 
-         0  no failing rule
-         1  failing warn/error rule, depending on --fail-on
-         2  invalid input, rule, or argument
+0  no failing rule
+1  failing warn/error rule, depending on --fail-on
+2  invalid input, rule, or argument
 
 BUILD
-     make
-     make test
-
-EXAMPLES
-     examples/github-actions/       reusable action workflow example
-     examples/deployments/          llama, zstd, and PX4-style adapters
-
-     Run them:
-
-         examples/github-actions/test-project.sh
-         examples/deployments/test-all.sh
+make
+make test
 
 EMBEDDING
-     Compile with -DLIM_NO_MAIN and include lim.h from a C or C++ test harness.
-
-         cc -std=c99 -Wall -Wextra -O2 -DLIM_NO_MAIN example.c lim.c -o example
+Compile with -DLIM_NO_MAIN and include lim.h from a C or C++ test harness.
 
 LICENSE
-     MIT.
+MIT.

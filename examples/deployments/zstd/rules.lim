@@ -1,5 +1,0 @@
-# key                         op  threshold  level  event-id
-compression.mb_per_sec        <   450        error  compression.regression
-decompression.mb_per_sec      <   1500       error  decompression.regression
-compression.ratio             <   2.5        warn   ratio.low
-binary.bytes                  >   1200000    warn   binary.large

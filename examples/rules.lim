@@ -1,5 +1,0 @@
-# key             op  threshold  level  event-id
-temperature      >   80         warn   temperature.high
-queue.depth      >   1000       error  queue.backpressure
-frame.ms         >   16.6       warn   frame.slow
-battery.voltage  <   10.5       error  battery.low
