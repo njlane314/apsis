@@ -1,0 +1,62 @@
+DWELL
+
+PURPOSE
+Check numeric internal-state samples in CI.
+
+Programs emit key=value lines. dwell checks them against contracts, emits plain
+text events, and exits nonzero when an error contract fires.
+
+dwell uses the same limit-rule input and event output shape as trip, so the same
+key=value sample stream can be checked by either program for simple numeric
+limits.
+
+USAGE
+cc -std=c99 -Wall -Wextra -O2 dwell.c -o dwell
+./some_test_or_benchmark | ./dwell -r .dwell/contracts.dwell
+
+CONTRACTS
+Format:
+
+key op number level event_id
+
+Examples:
+
+frame.ms              > 16.6    warn   frame.slow
+queue.depth           > 1000    error  queue.backpressure
+tokens.per_second     < 50      error  inference.too_slow
+temperature           > 80      warn   temperature.high
+
+Operators:
+
+> >= < <= == !=
+
+Levels:
+
+info warn error
+
+INPUT
+Accepted forms:
+
+frame.ms=18.7
+queue.depth 1402
+
+OUTPUT
+Tab-separated events on stdout:
+
+warn	frame.slow	frame.ms	>	16.600000000000001	18.699999999999999
+
+Exit status:
+
+0  no failing contract
+1  failing warn/error/info contract, depending on --fail-on
+2  invalid input, contract, or argument
+
+BUILD
+make
+make test
+
+EMBEDDING
+Compile with -DDWELL_NO_MAIN and include dwell.h from a C or C++ test harness.
+
+LICENSE
+MIT.
