@@ -3,7 +3,7 @@ LIM
 PURPOSE
 Check numeric telemetry in CI.
 
-Programs emit key=value lines. lim checks them against rules, emits JSONL
+Programs emit key=value lines. lim checks them against rules, emits plain text
 events, and exits nonzero when an error rule trips.
 
 USAGE
@@ -38,9 +38,11 @@ frame.ms=18.7
 queue.depth 1402
 
 OUTPUT
-JSONL events on stdout:
+Tab-separated events on stdout:
 
-{"ts":1760000000,"level":"warn","id":"frame.slow","key":"frame.ms","op":">","threshold":16.600000000000001,"value":18.699999999999999}
+warn	frame.slow	frame.ms	>	16.600000000000001	18.699999999999999
+
+Use --json for JSONL.
 
 Exit status:
 

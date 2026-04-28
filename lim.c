@@ -9,9 +9,9 @@
 #include <string.h>
 #include <time.h>
 
-#define TL_LINE_MAX 512
+#define LIM_LINE_MAX 512
 
-static void tl_strlcpy(char *dst, const char *src, size_t cap) {
+static void lim_strlcpy(char *dst, const char *src, size_t cap) {
     size_t i = 0;
     if (cap == 0) return;
     if (!src) src = "";
@@ -19,12 +19,12 @@ static void tl_strlcpy(char *dst, const char *src, size_t cap) {
     dst[i] = '\0';
 }
 
-static char *tl_ltrim(char *s) {
+static char *lim_ltrim(char *s) {
     while (*s && isspace((unsigned char)*s)) ++s;
     return s;
 }
 
-static void tl_rtrim(char *s) {
+static void lim_rtrim(char *s) {
     size_t n = strlen(s);
     while (n > 0 && isspace((unsigned char)s[n - 1])) {
         s[n - 1] = '\0';
@@ -32,20 +32,20 @@ static void tl_rtrim(char *s) {
     }
 }
 
-static void tl_strip_comment(char *s) {
+static void lim_strip_comment(char *s) {
     char *p = strchr(s, '#');
     if (p) *p = '\0';
 }
 
-static void tl_set_err(char *err, size_t err_cap, const char *msg) {
-    if (err && err_cap) tl_strlcpy(err, msg, err_cap);
+static void lim_set_err(char *err, size_t err_cap, const char *msg) {
+    if (err && err_cap) lim_strlcpy(err, msg, err_cap);
 }
 
-static int tl_valid_name(const char *s) {
+static int lim_valid_name(const char *s) {
     size_t n;
     if (!s || !*s) return 0;
     n = strlen(s);
-    if (n >= TL_MAX_NAME) return 0;
+    if (n >= LIM_MAX_NAME) return 0;
     for (size_t i = 0; s[i]; ++i) {
         unsigned char c = (unsigned char)s[i];
         if (!(isalnum(c) || c == '_' || c == '-' || c == '.' || c == ':' || c == '/')) {
@@ -55,7 +55,7 @@ static int tl_valid_name(const char *s) {
     return 1;
 }
 
-static int tl_parse_duration(const char *s, double *out) {
+static int lim_parse_duration(const char *s, double *out) {
     char *end = NULL;
     double value;
     double factor = 1.0;
@@ -82,105 +82,105 @@ static int tl_parse_duration(const char *s, double *out) {
     return 0;
 }
 
-const char *tl_level_name(tl_level level) {
+const char *lim_level_name(lim_level level) {
     switch (level) {
-        case TL_LEVEL_INFO: return "info";
-        case TL_LEVEL_WARN: return "warn";
-        case TL_LEVEL_ERROR: return "error";
+        case LIM_LEVEL_INFO: return "info";
+        case LIM_LEVEL_WARN: return "warn";
+        case LIM_LEVEL_ERROR: return "error";
         default: return "unknown";
     }
 }
 
-const char *tl_op_name(tl_op op) {
+const char *lim_op_name(lim_op op) {
     switch (op) {
-        case TL_OP_GT: return ">";
-        case TL_OP_GTE: return ">=";
-        case TL_OP_LT: return "<";
-        case TL_OP_LTE: return "<=";
-        case TL_OP_EQ: return "==";
-        case TL_OP_NEQ: return "!=";
+        case LIM_OP_GT: return ">";
+        case LIM_OP_GTE: return ">=";
+        case LIM_OP_LT: return "<";
+        case LIM_OP_LTE: return "<=";
+        case LIM_OP_EQ: return "==";
+        case LIM_OP_NEQ: return "!=";
         default: return "?";
     }
 }
 
-const char *tl_rule_op_name(const tl_rule *rule) {
+const char *lim_rule_op_name(const lim_rule *rule) {
     if (!rule) return "?";
-    if (rule->kind == TL_RULE_STALE) return "stale";
-    return tl_op_name(rule->op);
+    if (rule->kind == LIM_RULE_STALE) return "stale";
+    return lim_op_name(rule->op);
 }
 
-int tl_parse_level(const char *s, tl_level *out) {
+int lim_parse_level(const char *s, lim_level *out) {
     if (!s || !out) return -1;
-    if (strcmp(s, "info") == 0) { *out = TL_LEVEL_INFO; return 0; }
-    if (strcmp(s, "warn") == 0 || strcmp(s, "warning") == 0) { *out = TL_LEVEL_WARN; return 0; }
-    if (strcmp(s, "error") == 0 || strcmp(s, "err") == 0) { *out = TL_LEVEL_ERROR; return 0; }
+    if (strcmp(s, "info") == 0) { *out = LIM_LEVEL_INFO; return 0; }
+    if (strcmp(s, "warn") == 0 || strcmp(s, "warning") == 0) { *out = LIM_LEVEL_WARN; return 0; }
+    if (strcmp(s, "error") == 0 || strcmp(s, "err") == 0) { *out = LIM_LEVEL_ERROR; return 0; }
     return -1;
 }
 
-int tl_parse_op(const char *s, tl_op *out) {
+int lim_parse_op(const char *s, lim_op *out) {
     if (!s || !out) return -1;
-    if (strcmp(s, ">") == 0) { *out = TL_OP_GT; return 0; }
-    if (strcmp(s, ">=") == 0) { *out = TL_OP_GTE; return 0; }
-    if (strcmp(s, "<") == 0) { *out = TL_OP_LT; return 0; }
-    if (strcmp(s, "<=") == 0) { *out = TL_OP_LTE; return 0; }
-    if (strcmp(s, "==") == 0) { *out = TL_OP_EQ; return 0; }
-    if (strcmp(s, "!=") == 0) { *out = TL_OP_NEQ; return 0; }
+    if (strcmp(s, ">") == 0) { *out = LIM_OP_GT; return 0; }
+    if (strcmp(s, ">=") == 0) { *out = LIM_OP_GTE; return 0; }
+    if (strcmp(s, "<") == 0) { *out = LIM_OP_LT; return 0; }
+    if (strcmp(s, "<=") == 0) { *out = LIM_OP_LTE; return 0; }
+    if (strcmp(s, "==") == 0) { *out = LIM_OP_EQ; return 0; }
+    if (strcmp(s, "!=") == 0) { *out = LIM_OP_NEQ; return 0; }
     return -1;
 }
 
-int tl_rule_matches(const tl_rule *rule, double value) {
+int lim_rule_matches(const lim_rule *rule, double value) {
     if (!rule) return 0;
-    if (rule->kind == TL_RULE_STALE) return value > rule->threshold;
+    if (rule->kind == LIM_RULE_STALE) return value > rule->threshold;
     switch (rule->op) {
-        case TL_OP_GT: return value > rule->threshold;
-        case TL_OP_GTE: return value >= rule->threshold;
-        case TL_OP_LT: return value < rule->threshold;
-        case TL_OP_LTE: return value <= rule->threshold;
-        case TL_OP_EQ: return value == rule->threshold;
-        case TL_OP_NEQ: return value != rule->threshold;
+        case LIM_OP_GT: return value > rule->threshold;
+        case LIM_OP_GTE: return value >= rule->threshold;
+        case LIM_OP_LT: return value < rule->threshold;
+        case LIM_OP_LTE: return value <= rule->threshold;
+        case LIM_OP_EQ: return value == rule->threshold;
+        case LIM_OP_NEQ: return value != rule->threshold;
         default: return 0;
     }
 }
 
-void tl_init(tl_ctx *ctx) {
+void lim_init(lim_ctx *ctx) {
     if (!ctx) return;
     memset(ctx, 0, sizeof(*ctx));
 }
 
-int tl_add_rule(tl_ctx *ctx, const char *key, tl_op op, double threshold,
-                 tl_level level, const char *event_id) {
-    tl_rule *r;
-    if (!ctx || !tl_valid_name(key) || !tl_valid_name(event_id)) return -1;
-    if (ctx->rule_count >= TL_MAX_RULES) return -2;
+int lim_add_rule(lim_ctx *ctx, const char *key, lim_op op, double threshold,
+                 lim_level level, const char *event_id) {
+    lim_rule *r;
+    if (!ctx || !lim_valid_name(key) || !lim_valid_name(event_id)) return -1;
+    if (ctx->rule_count >= LIM_MAX_RULES) return -2;
 
     r = &ctx->rules[ctx->rule_count++];
-    tl_strlcpy(r->key, key, sizeof(r->key));
-    r->kind = TL_RULE_LIMIT;
+    lim_strlcpy(r->key, key, sizeof(r->key));
+    r->kind = LIM_RULE_LIMIT;
     r->op = op;
     r->threshold = threshold;
     r->level = level;
-    tl_strlcpy(r->event_id, event_id, sizeof(r->event_id));
+    lim_strlcpy(r->event_id, event_id, sizeof(r->event_id));
     return 0;
 }
 
-int tl_add_stale_rule(tl_ctx *ctx, const char *key, double stale_seconds,
-                       tl_level level, const char *event_id) {
-    tl_rule *r;
-    if (!ctx || !tl_valid_name(key) || !tl_valid_name(event_id)) return -1;
+int lim_add_stale_rule(lim_ctx *ctx, const char *key, double stale_seconds,
+                       lim_level level, const char *event_id) {
+    lim_rule *r;
+    if (!ctx || !lim_valid_name(key) || !lim_valid_name(event_id)) return -1;
     if (stale_seconds < 0.0) return -1;
-    if (ctx->rule_count >= TL_MAX_RULES) return -2;
+    if (ctx->rule_count >= LIM_MAX_RULES) return -2;
 
     r = &ctx->rules[ctx->rule_count++];
-    tl_strlcpy(r->key, key, sizeof(r->key));
-    r->kind = TL_RULE_STALE;
-    r->op = TL_OP_GT;
+    lim_strlcpy(r->key, key, sizeof(r->key));
+    r->kind = LIM_RULE_STALE;
+    r->op = LIM_OP_GT;
     r->threshold = stale_seconds;
     r->level = level;
-    tl_strlcpy(r->event_id, event_id, sizeof(r->event_id));
+    lim_strlcpy(r->event_id, event_id, sizeof(r->event_id));
     return 0;
 }
 
-static int tl_parse_rule_options(double *cooldown_seconds, unsigned long line_no,
+static int lim_parse_rule_options(double *cooldown_seconds, unsigned long line_no,
                                   char *err, size_t err_cap) {
     char *tok;
     char msg[160];
@@ -194,20 +194,20 @@ static int tl_parse_rule_options(double *cooldown_seconds, unsigned long line_no
 
         if (strcmp(tok, "cooldown") != 0) {
             snprintf(msg, sizeof(msg), "rules:%lu: unknown rule option '%s'", line_no, tok);
-            tl_set_err(err, err_cap, msg);
+            lim_set_err(err, err_cap, msg);
             return -1;
         }
 
         if (has_cooldown) {
             snprintf(msg, sizeof(msg), "rules:%lu: duplicate cooldown option", line_no);
-            tl_set_err(err, err_cap, msg);
+            lim_set_err(err, err_cap, msg);
             return -1;
         }
 
         duration = strtok(NULL, " \t\r\n");
-        if (!duration || tl_parse_duration(duration, cooldown_seconds) != 0) {
+        if (!duration || lim_parse_duration(duration, cooldown_seconds) != 0) {
             snprintf(msg, sizeof(msg), "rules:%lu: invalid cooldown duration", line_no);
-            tl_set_err(err, err_cap, msg);
+            lim_set_err(err, err_cap, msg);
             return -1;
         }
         has_cooldown = 1;
@@ -216,19 +216,19 @@ static int tl_parse_rule_options(double *cooldown_seconds, unsigned long line_no
     return 0;
 }
 
-static int tl_parse_rule_line(tl_ctx *ctx, char *line, unsigned long line_no,
+static int lim_parse_rule_line(lim_ctx *ctx, char *line, unsigned long line_no,
                                char *err, size_t err_cap) {
     char *tok_key, *tok_op, *tok_threshold, *tok_level, *tok_event;
-    tl_op op;
-    tl_level level;
+    lim_op op;
+    lim_level level;
     double threshold;
     double cooldown_seconds;
     char *end = NULL;
     char msg[160];
 
-    tl_strip_comment(line);
-    line = tl_ltrim(line);
-    tl_rtrim(line);
+    lim_strip_comment(line);
+    line = lim_ltrim(line);
+    lim_rtrim(line);
     if (*line == '\0') return 0;
 
     tok_key = strtok(line, " \t\r\n");
@@ -239,45 +239,45 @@ static int tl_parse_rule_line(tl_ctx *ctx, char *line, unsigned long line_no,
 
     if (!tok_key || !tok_op || !tok_threshold || !tok_level || !tok_event) {
         snprintf(msg, sizeof(msg), "rules:%lu: expected: <key> <op> <number> <level> <event_id>", line_no);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
-    if (!tl_valid_name(tok_key) || !tl_valid_name(tok_event)) {
+    if (!lim_valid_name(tok_key) || !lim_valid_name(tok_event)) {
         snprintf(msg, sizeof(msg), "rules:%lu: invalid key or event id", line_no);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
-    if (tl_parse_level(tok_level, &level) != 0) {
+    if (lim_parse_level(tok_level, &level) != 0) {
         snprintf(msg, sizeof(msg), "rules:%lu: invalid level '%s'", line_no, tok_level);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
-    if (tl_parse_rule_options(&cooldown_seconds, line_no, err, err_cap) != 0) {
+    if (lim_parse_rule_options(&cooldown_seconds, line_no, err, err_cap) != 0) {
         return -1;
     }
 
     if (strcmp(tok_op, "stale") == 0) {
-        if (tl_parse_duration(tok_threshold, &threshold) != 0) {
+        if (lim_parse_duration(tok_threshold, &threshold) != 0) {
             snprintf(msg, sizeof(msg), "rules:%lu: invalid stale duration '%s'", line_no, tok_threshold);
-            tl_set_err(err, err_cap, msg);
+            lim_set_err(err, err_cap, msg);
             return -1;
         }
 
-        if (tl_add_stale_rule(ctx, tok_key, threshold, level, tok_event) != 0) {
+        if (lim_add_stale_rule(ctx, tok_key, threshold, level, tok_event) != 0) {
             snprintf(msg, sizeof(msg), "rules:%lu: too many rules or invalid rule", line_no);
-            tl_set_err(err, err_cap, msg);
+            lim_set_err(err, err_cap, msg);
             return -1;
         }
         ctx->rules[ctx->rule_count - 1].cooldown_seconds = cooldown_seconds;
         return 0;
     }
 
-    if (tl_parse_op(tok_op, &op) != 0) {
+    if (lim_parse_op(tok_op, &op) != 0) {
         snprintf(msg, sizeof(msg), "rules:%lu: invalid operator '%s'", line_no, tok_op);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
@@ -285,13 +285,13 @@ static int tl_parse_rule_line(tl_ctx *ctx, char *line, unsigned long line_no,
     threshold = strtod(tok_threshold, &end);
     if (errno != 0 || !end || *end != '\0') {
         snprintf(msg, sizeof(msg), "rules:%lu: invalid number '%s'", line_no, tok_threshold);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
-    if (tl_add_rule(ctx, tok_key, op, threshold, level, tok_event) != 0) {
+    if (lim_add_rule(ctx, tok_key, op, threshold, level, tok_event) != 0) {
         snprintf(msg, sizeof(msg), "rules:%lu: too many rules or invalid rule", line_no);
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
     ctx->rules[ctx->rule_count - 1].cooldown_seconds = cooldown_seconds;
@@ -299,13 +299,13 @@ static int tl_parse_rule_line(tl_ctx *ctx, char *line, unsigned long line_no,
     return 0;
 }
 
-int tl_load_rules_file(tl_ctx *ctx, const char *path, char *err, size_t err_cap) {
+int lim_load_rules_file(lim_ctx *ctx, const char *path, char *err, size_t err_cap) {
     FILE *f;
-    char line[TL_LINE_MAX];
+    char line[LIM_LINE_MAX];
     unsigned long line_no = 0;
 
     if (!ctx || !path) {
-        tl_set_err(err, err_cap, "missing rules path");
+        lim_set_err(err, err_cap, "missing rules path");
         return -1;
     }
 
@@ -313,20 +313,20 @@ int tl_load_rules_file(tl_ctx *ctx, const char *path, char *err, size_t err_cap)
     if (!f) {
         char msg[160];
         snprintf(msg, sizeof(msg), "cannot open rules file '%s': %s", path, strerror(errno));
-        tl_set_err(err, err_cap, msg);
+        lim_set_err(err, err_cap, msg);
         return -1;
     }
 
     while (fgets(line, sizeof(line), f)) {
         ++line_no;
-        if (tl_parse_rule_line(ctx, line, line_no, err, err_cap) != 0) {
+        if (lim_parse_rule_line(ctx, line, line_no, err, err_cap) != 0) {
             fclose(f);
             return -1;
         }
     }
 
     if (ferror(f)) {
-        tl_set_err(err, err_cap, "error reading rules file");
+        lim_set_err(err, err_cap, "error reading rules file");
         fclose(f);
         return -1;
     }
@@ -335,7 +335,7 @@ int tl_load_rules_file(tl_ctx *ctx, const char *path, char *err, size_t err_cap)
     return 0;
 }
 
-static int tl_json_escape(char *dst, size_t cap, const char *src) {
+static int lim_json_escape(char *dst, size_t cap, const char *src) {
     size_t j = 0;
     if (!dst || cap == 0) return -1;
     if (!src) src = "";
@@ -376,28 +376,49 @@ static int tl_json_escape(char *dst, size_t cap, const char *src) {
     return 0;
 }
 
-static int tl_emit_event(const tl_rule *rule, double value, char *out, size_t out_cap,
-                          time_t now) {
-    char key_esc[TL_MAX_NAME * 2];
-    char id_esc[TL_MAX_NAME * 2];
-    if (tl_json_escape(key_esc, sizeof(key_esc), rule->key) != 0) return -1;
-    if (tl_json_escape(id_esc, sizeof(id_esc), rule->event_id) != 0) return -1;
+static int lim_emit_event_json(const lim_rule *rule, double value, char *out, size_t out_cap,
+                               time_t now) {
+    char key_esc[LIM_MAX_NAME * 2];
+    char id_esc[LIM_MAX_NAME * 2];
+    if (lim_json_escape(key_esc, sizeof(key_esc), rule->key) != 0) return -1;
+    if (lim_json_escape(id_esc, sizeof(id_esc), rule->event_id) != 0) return -1;
 
     if (!out || out_cap == 0) return -1;
     snprintf(out, out_cap,
              "{\"ts\":%lld,\"level\":\"%s\",\"id\":\"%s\",\"key\":\"%s\",\"op\":\"%s\",\"threshold\":%.17g,\"value\":%.17g}",
              (long long)now,
-             tl_level_name(rule->level),
+             lim_level_name(rule->level),
              id_esc,
              key_esc,
-             tl_rule_op_name(rule),
+             lim_rule_op_name(rule),
              rule->threshold,
              value);
     return 0;
 }
 
-static int tl_record_event(tl_ctx *ctx, tl_rule *rule, double value,
-                            char *out, size_t out_cap, time_t now) {
+static int lim_emit_event_text(const lim_rule *rule, double value, char *out, size_t out_cap) {
+    if (!out || out_cap == 0) return -1;
+    snprintf(out, out_cap, "%s\t%s\t%s\t%s\t%.17g\t%.17g",
+             lim_level_name(rule->level),
+             rule->event_id,
+             rule->key,
+             lim_rule_op_name(rule),
+             rule->threshold,
+             value);
+    return 0;
+}
+
+static int lim_emit_event(const lim_rule *rule, double value, lim_format format,
+                          char *out, size_t out_cap, time_t now) {
+    if (format == LIM_FORMAT_JSON) {
+        return lim_emit_event_json(rule, value, out, out_cap, now);
+    }
+    return lim_emit_event_text(rule, value, out, out_cap);
+}
+
+static int lim_record_event(lim_ctx *ctx, lim_rule *rule, double value,
+                            lim_format format, char *out, size_t out_cap,
+                            time_t now) {
     if (!ctx || !rule) return -1;
 
     if (rule->cooldown_seconds > 0.0 && rule->has_last_emit_time) {
@@ -409,18 +430,23 @@ static int tl_record_event(tl_ctx *ctx, tl_rule *rule, double value,
     rule->has_last_emit_time = 1;
 
     ctx->events_emitted++;
-    if (rule->level == TL_LEVEL_INFO) ctx->info_count++;
-    if (rule->level == TL_LEVEL_WARN) ctx->warn_count++;
-    if (rule->level == TL_LEVEL_ERROR) ctx->error_count++;
+    if (rule->level == LIM_LEVEL_INFO) ctx->info_count++;
+    if (rule->level == LIM_LEVEL_WARN) ctx->warn_count++;
+    if (rule->level == LIM_LEVEL_ERROR) ctx->error_count++;
 
     if (out && out_cap && out[0] == '\0') {
-        tl_emit_event(rule, value, out, out_cap, now);
+        lim_emit_event(rule, value, format, out, out_cap, now);
     }
 
     return 1;
 }
 
-int tl_sample(tl_ctx *ctx, const char *key, double value, char *out, size_t out_cap) {
+int lim_sample(lim_ctx *ctx, const char *key, double value, char *out, size_t out_cap) {
+    return lim_sample_format(ctx, key, value, LIM_FORMAT_TEXT, out, out_cap);
+}
+
+int lim_sample_format(lim_ctx *ctx, const char *key, double value,
+                      lim_format format, char *out, size_t out_cap) {
     int emitted = 0;
     time_t now = time(NULL);
     if (!ctx || !key) return -1;
@@ -429,35 +455,36 @@ int tl_sample(tl_ctx *ctx, const char *key, double value, char *out, size_t out_
     if (out && out_cap) out[0] = '\0';
 
     for (size_t i = 0; i < ctx->rule_count; ++i) {
-        tl_rule *r = &ctx->rules[i];
+        lim_rule *r = &ctx->rules[i];
         if (strcmp(r->key, key) != 0) continue;
-        if (r->kind == TL_RULE_STALE) r->seen = 1;
-        if (!tl_rule_matches(r, value)) continue;
+        if (r->kind == LIM_RULE_STALE) r->seen = 1;
+        if (!lim_rule_matches(r, value)) continue;
 
-        emitted += tl_record_event(ctx, r, value, out, out_cap, now);
+        emitted += lim_record_event(ctx, r, value, format, out, out_cap, now);
     }
 
     return emitted;
 }
 
-#ifndef TL_NO_MAIN
-static int tl_emit_missing_stale(tl_ctx *ctx) {
+#ifndef LIM_NO_MAIN
+static int lim_emit_missing_stale(lim_ctx *ctx, lim_format format) {
     int emitted = 0;
     time_t now = time(NULL);
 
     if (!ctx) return -1;
 
     for (size_t i = 0; i < ctx->rule_count; ++i) {
-        tl_rule *r = &ctx->rules[i];
-        char event_json[512];
+        lim_rule *r = &ctx->rules[i];
+        char event_line[512];
         int er;
 
-        if (r->kind != TL_RULE_STALE || r->seen) continue;
+        if (r->kind != LIM_RULE_STALE || r->seen) continue;
 
-        event_json[0] = '\0';
-        er = tl_record_event(ctx, r, r->threshold, event_json, sizeof(event_json), now);
-        if (er > 0 && event_json[0]) {
-            puts(event_json);
+        event_line[0] = '\0';
+        er = lim_record_event(ctx, r, r->threshold, format, event_line,
+                              sizeof(event_line), now);
+        if (er > 0 && event_line[0]) {
+            puts(event_line);
             emitted += er;
         }
     }
@@ -465,11 +492,11 @@ static int tl_emit_missing_stale(tl_ctx *ctx) {
     return emitted;
 }
 
-static void tl_usage(FILE *f) {
+static void lim_usage(FILE *f) {
     fprintf(f,
-        "usage: lim -r rules.lim [--fail-on error|warn|never] [--summary]\n"
+        "usage: lim -r rules.lim [--fail-on error|warn|never] [--json] [--summary]\n"
         "\n"
-        "Read key=value telemetry from stdin and emit JSONL events for rules that trip.\n"
+        "Read key=value telemetry from stdin and emit events for rules that trip.\n"
         "\n"
         "Rules:\n"
         "  <key> <op> <number> <level> <event_id>\n"
@@ -489,41 +516,42 @@ static void tl_usage(FILE *f) {
         "Options:\n"
         "  -r, --rules PATH       rules file\n"
         "  --fail-on LEVEL        error, warn, or never; default: error\n"
+        "  --json                 emit JSONL instead of tab-separated text\n"
         "  --summary              print summary to stderr\n"
         "  -h, --help             show help\n"
         "  --version              show version\n");
 }
 
-static int tl_parse_sample_line(char *line, char *key, size_t key_cap, double *value) {
+static int lim_parse_sample_line(char *line, char *key, size_t key_cap, double *value) {
     char *p;
     char *v;
     char *end = NULL;
 
-    tl_strip_comment(line);
-    line = tl_ltrim(line);
-    tl_rtrim(line);
+    lim_strip_comment(line);
+    line = lim_ltrim(line);
+    lim_rtrim(line);
     if (*line == '\0') return 0;
 
     p = strchr(line, '=');
     if (p) {
         *p = '\0';
         v = p + 1;
-        tl_rtrim(line);
-        v = tl_ltrim(v);
+        lim_rtrim(line);
+        v = lim_ltrim(v);
     } else {
         char *save = NULL;
         char *k = strtok_r(line, " \t\r\n", &save);
         char *val = strtok_r(NULL, " \t\r\n", &save);
         if (!k || !val) return -1;
-        tl_strlcpy(key, k, key_cap);
+        lim_strlcpy(key, k, key_cap);
         errno = 0;
         *value = strtod(val, &end);
         if (errno != 0 || !end || *end != '\0') return -1;
         return 1;
     }
 
-    if (!tl_valid_name(line)) return -1;
-    tl_strlcpy(key, line, key_cap);
+    if (!lim_valid_name(line)) return -1;
+    lim_strlcpy(key, line, key_cap);
     errno = 0;
     *value = strtod(v, &end);
     if (errno != 0 || !end || *end != '\0') return -1;
@@ -532,12 +560,13 @@ static int tl_parse_sample_line(char *line, char *key, size_t key_cap, double *v
 
 int main(int argc, char **argv) {
     const char *rules_path = NULL;
-    tl_level fail_on = TL_LEVEL_ERROR;
+    lim_level fail_on = LIM_LEVEL_ERROR;
     int fail_never = 0;
     int summary = 0;
-    tl_ctx ctx;
+    lim_format format = LIM_FORMAT_TEXT;
+    lim_ctx ctx;
     char err[256];
-    char line[TL_LINE_MAX];
+    char line[LIM_LINE_MAX];
     unsigned long input_line = 0;
     int bad_input = 0;
 
@@ -548,46 +577,48 @@ int main(int argc, char **argv) {
             const char *arg = argv[++i];
             if (strcmp(arg, "never") == 0) {
                 fail_never = 1;
-            } else if (tl_parse_level(arg, &fail_on) != 0) {
+            } else if (lim_parse_level(arg, &fail_on) != 0) {
                 fprintf(stderr, "lim: invalid --fail-on value '%s'\n", arg);
                 return 2;
             }
         } else if (strcmp(argv[i], "--summary") == 0) {
             summary = 1;
+        } else if (strcmp(argv[i], "--json") == 0) {
+            format = LIM_FORMAT_JSON;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            tl_usage(stdout);
+            lim_usage(stdout);
             return 0;
         } else if (strcmp(argv[i], "--version") == 0) {
             puts("lim 0.1.0");
             return 0;
         } else {
             fprintf(stderr, "lim: unknown argument '%s'\n", argv[i]);
-            tl_usage(stderr);
+            lim_usage(stderr);
             return 2;
         }
     }
 
     if (!rules_path) {
         fprintf(stderr, "lim: missing -r rules.lim\n");
-        tl_usage(stderr);
+        lim_usage(stderr);
         return 2;
     }
 
-    tl_init(&ctx);
-    if (tl_load_rules_file(&ctx, rules_path, err, sizeof(err)) != 0) {
+    lim_init(&ctx);
+    if (lim_load_rules_file(&ctx, rules_path, err, sizeof(err)) != 0) {
         fprintf(stderr, "lim: %s\n", err);
         return 2;
     }
 
     while (fgets(line, sizeof(line), stdin)) {
-        char key[TL_MAX_NAME];
+        char key[LIM_MAX_NAME];
         double value;
         int pr;
         int emitted;
-        char event_json[512];
+        char event_line[512];
 
         input_line++;
-        pr = tl_parse_sample_line(line, key, sizeof(key), &value);
+        pr = lim_parse_sample_line(line, key, sizeof(key), &value);
         if (pr == 0) continue;
         if (pr < 0) {
             fprintf(stderr, "lim: input:%lu: expected key=value or key value\n", input_line);
@@ -595,9 +626,10 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        emitted = tl_sample(&ctx, key, value, event_json, sizeof(event_json));
-        if (emitted > 0 && event_json[0]) {
-            puts(event_json);
+        emitted = lim_sample_format(&ctx, key, value, format, event_line,
+                                    sizeof(event_line));
+        if (emitted > 0 && event_line[0]) {
+            puts(event_line);
         }
     }
 
@@ -606,7 +638,7 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    tl_emit_missing_stale(&ctx);
+    lim_emit_missing_stale(&ctx, format);
 
     if (summary) {
         fprintf(stderr,
@@ -617,9 +649,9 @@ int main(int argc, char **argv) {
 
     if (bad_input) return 2;
     if (!fail_never) {
-        if (fail_on == TL_LEVEL_ERROR && ctx.error_count > 0) return 1;
-        if (fail_on == TL_LEVEL_WARN && (ctx.warn_count > 0 || ctx.error_count > 0)) return 1;
-        if (fail_on == TL_LEVEL_INFO && ctx.events_emitted > 0) return 1;
+        if (fail_on == LIM_LEVEL_ERROR && ctx.error_count > 0) return 1;
+        if (fail_on == LIM_LEVEL_WARN && (ctx.warn_count > 0 || ctx.error_count > 0)) return 1;
+        if (fail_on == LIM_LEVEL_INFO && ctx.events_emitted > 0) return 1;
     }
 
     return 0;

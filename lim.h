@@ -1,5 +1,5 @@
-#ifndef TL_H
-#define TL_H
+#ifndef LIM_H
+#define LIM_H
 
 /*
  * lim.h - tiny telemetry limit checker
@@ -16,75 +16,82 @@ extern "C" {
 
 #include <stddef.h>
 
-#ifndef TL_MAX_RULES
-#define TL_MAX_RULES 256
+#ifndef LIM_MAX_RULES
+#define LIM_MAX_RULES 256
 #endif
 
-#ifndef TL_MAX_NAME
-#define TL_MAX_NAME 64
+#ifndef LIM_MAX_NAME
+#define LIM_MAX_NAME 64
 #endif
 
-typedef enum tl_level {
-    TL_LEVEL_INFO = 0,
-    TL_LEVEL_WARN = 1,
-    TL_LEVEL_ERROR = 2
-} tl_level;
+typedef enum lim_level {
+    LIM_LEVEL_INFO = 0,
+    LIM_LEVEL_WARN = 1,
+    LIM_LEVEL_ERROR = 2
+} lim_level;
 
-typedef enum tl_op {
-    TL_OP_GT = 0,
-    TL_OP_GTE,
-    TL_OP_LT,
-    TL_OP_LTE,
-    TL_OP_EQ,
-    TL_OP_NEQ
-} tl_op;
+typedef enum lim_op {
+    LIM_OP_GT = 0,
+    LIM_OP_GTE,
+    LIM_OP_LT,
+    LIM_OP_LTE,
+    LIM_OP_EQ,
+    LIM_OP_NEQ
+} lim_op;
 
-typedef enum tl_rule_kind {
-    TL_RULE_LIMIT = 0,
-    TL_RULE_STALE = 1
-} tl_rule_kind;
+typedef enum lim_rule_kind {
+    LIM_RULE_LIMIT = 0,
+    LIM_RULE_STALE = 1
+} lim_rule_kind;
 
-typedef struct tl_rule {
-    char key[TL_MAX_NAME];
-    tl_rule_kind kind;
-    tl_op op;
+typedef enum lim_format {
+    LIM_FORMAT_TEXT = 0,
+    LIM_FORMAT_JSON = 1
+} lim_format;
+
+typedef struct lim_rule {
+    char key[LIM_MAX_NAME];
+    lim_rule_kind kind;
+    lim_op op;
     double threshold;
-    tl_level level;
-    char event_id[TL_MAX_NAME];
+    lim_level level;
+    char event_id[LIM_MAX_NAME];
     double cooldown_seconds;
     long long last_emit_time;
     int has_last_emit_time;
     int seen;
-} tl_rule;
+} lim_rule;
 
-typedef struct tl_ctx {
-    tl_rule rules[TL_MAX_RULES];
+typedef struct lim_ctx {
+    lim_rule rules[LIM_MAX_RULES];
     size_t rule_count;
     unsigned long samples_seen;
     unsigned long events_emitted;
     unsigned long info_count;
     unsigned long warn_count;
     unsigned long error_count;
-} tl_ctx;
+} lim_ctx;
 
-void tl_init(tl_ctx *ctx);
-int tl_add_rule(tl_ctx *ctx, const char *key, tl_op op, double threshold,
-                 tl_level level, const char *event_id);
-int tl_add_stale_rule(tl_ctx *ctx, const char *key, double stale_seconds,
-                       tl_level level, const char *event_id);
-int tl_load_rules_file(tl_ctx *ctx, const char *path, char *err, size_t err_cap);
-int tl_sample(tl_ctx *ctx, const char *key, double value, char *out,
+void lim_init(lim_ctx *ctx);
+int lim_add_rule(lim_ctx *ctx, const char *key, lim_op op, double threshold,
+                 lim_level level, const char *event_id);
+int lim_add_stale_rule(lim_ctx *ctx, const char *key, double stale_seconds,
+                       lim_level level, const char *event_id);
+int lim_load_rules_file(lim_ctx *ctx, const char *path, char *err, size_t err_cap);
+int lim_sample(lim_ctx *ctx, const char *key, double value, char *out,
                size_t out_cap);
+int lim_sample_format(lim_ctx *ctx, const char *key, double value,
+                      lim_format format, char *out, size_t out_cap);
 
-const char *tl_level_name(tl_level level);
-const char *tl_op_name(tl_op op);
-const char *tl_rule_op_name(const tl_rule *rule);
-int tl_parse_level(const char *s, tl_level *out);
-int tl_parse_op(const char *s, tl_op *out);
-int tl_rule_matches(const tl_rule *rule, double value);
+const char *lim_level_name(lim_level level);
+const char *lim_op_name(lim_op op);
+const char *lim_rule_op_name(const lim_rule *rule);
+int lim_parse_level(const char *s, lim_level *out);
+int lim_parse_op(const char *s, lim_op *out);
+int lim_rule_matches(const lim_rule *rule, double value);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TL_H */
+#endif /* LIM_H */

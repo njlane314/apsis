@@ -31,10 +31,10 @@ test: lim
 	set -e; \
 	cat "$$tmp/events.jsonl"; \
 	test "$$status" -eq 1; \
-	grep -q '"id":"frame.slow"' "$$tmp/events.jsonl"; \
-	grep -q '"id":"queue.backpressure"' "$$tmp/events.jsonl"; \
-	grep -q '"id":"heartbeat.missing"' "$$tmp/events.jsonl"; \
-	test "$$(grep -c '"id":"temperature.high"' "$$tmp/events.jsonl")" -eq 1; \
+	grep -q 'warn	frame.slow' "$$tmp/events.jsonl"; \
+	grep -q 'error	queue.backpressure' "$$tmp/events.jsonl"; \
+	grep -q 'error	heartbeat.missing' "$$tmp/events.jsonl"; \
+	test "$$(grep -c 'warn	temperature.high' "$$tmp/events.jsonl")" -eq 1; \
 	printf '%s\n' 'heartbeat stale 5s error heartbeat.missing' > "$$tmp/stale-rules.lim"; \
 	printf '%s\n' 'other.metric=1' > "$$tmp/no-heartbeat.tlm"; \
 	set +e; \
@@ -43,7 +43,9 @@ test: lim
 	set -e; \
 	cat "$$tmp/stale-events.jsonl"; \
 	test "$$stale_status" -eq 1; \
-	grep -q '"id":"heartbeat.missing"' "$$tmp/stale-events.jsonl"
+	grep -q 'error	heartbeat.missing' "$$tmp/stale-events.jsonl"; \
+	./lim -r "$$tmp/rules.lim" --json --fail-on never < "$$tmp/sample.tlm" > "$$tmp/json-events.jsonl"; \
+	grep -q '"id":"frame.slow"' "$$tmp/json-events.jsonl"
 
 install: lim
 	install -d $(DESTDIR)$(PREFIX)/bin
