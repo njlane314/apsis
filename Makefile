@@ -25,26 +25,20 @@ lib/dwell.o: lib/dwell.c include/ctc_contract.h include/ctc_dwell.h
 libctc.a: $(LIB_OBJS)
 	$(AR) rcs libctc.a $(LIB_OBJS)
 
-trip: tools/trip/trip.c include/ctc.h include/ctc_contract.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/trip/trip.c libctc.a -o trip
+trip: tools/trip.c include/ctc.h include/ctc_contract.h libctc.a
+	$(CC) $(CFLAGS) -Iinclude tools/trip.c libctc.a -o trip
 
-dwell: tools/dwell/dwell.c include/ctc.h include/ctc_dwell.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/dwell/dwell.c libctc.a -o dwell
+dwell: tools/dwell.c include/ctc.h include/ctc_dwell.h libctc.a
+	$(CC) $(CFLAGS) -Iinclude tools/dwell.c libctc.a -o dwell
 
-atlas: tools/atlas/atlas.c
-	$(CC) $(CFLAGS) tools/atlas/atlas.c -o atlas
+atlas: tools/atlas.c
+	$(CC) $(CFLAGS) tools/atlas.c -o atlas
 
-probe: tools/probe/probe.c include/ctc.h include/ctc_contract.h libctc.a
-	$(CC) $(CFLAGS) -Iinclude tools/probe/probe.c libctc.a -o probe
+probe: tools/probe.c include/ctc.h include/ctc_contract.h libctc.a
+	$(CC) $(CFLAGS) -Iinclude tools/probe.c libctc.a -o probe
 
 check: all
-	sh tests/test_atlas.sh
-	sh tests/test_trip.sh
-	sh tests/test_probe.sh
-	$(CC) $(CFLAGS) -Iinclude tests/test_dwell.c libctc.a -o /tmp/test_dwell
-	/tmp/test_dwell
-	$(CC) $(CFLAGS) -Iinclude -Iexamples/rover examples/embedded/main.c libctc.a -o /tmp/ctc_embedded_example
-	/tmp/ctc_embedded_example >/tmp/ctc_embedded_example.out
+	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
 
 guardrail-scan:
 	@command -v rg >/dev/null 2>&1 || { echo "guardrail-scan: rg is required"; exit 2; }

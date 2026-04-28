@@ -19,11 +19,11 @@ violated.
 The tool boundary is intentional:
 
 ```sh
-atlas rules examples/rover/telemetry.atlas > rules.trip
+atlas rules telemetry.atlas > rules.trip
 program | trip -r rules.trip
 probe -s worker.queue.depth:u32:queue_depth -n 10 -- ./program | trip -r rules.trip
 probe -s worker.queue.depth:u32:queue_depth --rules rules.trip -- ./program
-cc -Iinclude -Iexamples/rover examples/embedded/main.c libctc.a
+cc -Iinclude app.c libctc.a
 ```
 
 ## Build
@@ -39,9 +39,9 @@ outside the C/POSIX toolchain.
 ## Agent Guardrails
 
 Automated coding agents must read [AGENTS.md](AGENTS.md) and
-[CODING_STANDARD.md](CODING_STANDARD.md) before changing code. The detailed
+[STANDARD.md](STANDARD.md) before changing code. The detailed
 NASA-derived guardrails live in
-[docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml). These
+[GUARDRAILS](GUARDRAILS). These
 guardrails are development guidance for this repository, not a NASA compliance
 claim.
 
@@ -81,5 +81,5 @@ ctc_dwell_tick(&ctx);
 Generate `CTC_TEL_*` constants with:
 
 ```sh
-atlas header examples/rover/telemetry.atlas > telemetry_ids.h
+atlas header telemetry.atlas > telemetry_ids.h
 ```

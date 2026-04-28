@@ -2,8 +2,8 @@
 
 No active waivers.
 
-When a deviation from [CODING_STANDARD.md](../CODING_STANDARD.md) or
-[nasa_coding_guardrails.yml](nasa_coding_guardrails.yml) is approved, record:
+When a deviation from [STANDARD.md](STANDARD.md) or
+[GUARDRAILS](GUARDRAILS) is approved, record:
 
 - `rule_id`
 - `deviation`

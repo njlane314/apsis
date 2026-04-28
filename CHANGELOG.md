@@ -13,3 +13,11 @@
 - Added NASA-derived coding guardrails and root agent instructions.
 - Added the project coding standard, waiver/nonconformance logs, and removed
   dynamic allocation from `probe` ELF symbol lookup.
+- Flattened tool sources to `tools/trip.c`, `tools/dwell.c`, `tools/atlas.c`,
+  and `tools/probe.c`.
+- Moved `make check` coverage into `check.sh` and removed the `tests/`
+  directory.
+- Made `check.sh` self-contained and removed the `examples/` directory.
+- Moved documentation guardrail files into the root as `GUARDRAILS`, `WAIVERS`,
+  and `NONCONFORMANCES`.
+- Renamed the project coding standard to `STANDARD.md`.

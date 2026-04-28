@@ -1,7 +1,7 @@
 # CTC Coding Standard
 
 This is the project-local coding standard for `ctc`. It is informed by
-[docs/nasa_coding_guardrails.yml](docs/nasa_coding_guardrails.yml), but it is
+[GUARDRAILS](GUARDRAILS), but it is
 not a NASA compliance claim.
 
 ## Applicability
@@ -18,7 +18,7 @@ flight, or ground support software.
 - No required third-party runtime dependencies.
 - Fixed-size storage is preferred.
 - Heap allocation is avoided in runtime paths. If heap allocation is needed, it
-  must be bounded, checked, and recorded in [docs/WAIVERS.md](docs/WAIVERS.md).
+  must be bounded, checked, and recorded in [WAIVERS](WAIVERS).
 - Public and boundary-facing functions validate pointer, capacity, enum, and
   range inputs before use.
 - Non-void return values are checked, propagated, or explicitly discarded with a
@@ -45,8 +45,8 @@ make guardrail-scan
 ```
 
 Static-analysis findings, compiler warnings, and guardrail deviations must be
-resolved or recorded in [docs/NONCONFORMANCES.md](docs/NONCONFORMANCES.md) and
-[docs/WAIVERS.md](docs/WAIVERS.md).
+resolved or recorded in [NONCONFORMANCES](NONCONFORMANCES) and
+[WAIVERS](WAIVERS).
 
 ## Naming And Formatting
 

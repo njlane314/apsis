@@ -1,4 +1,0 @@
-imu.temperature_c > 80 warn imu.overtemp
-battery.voltage < 10.8 error battery.low
-control.loop_ms > 4.0 error control_loop.overrun
-net.dropped_packets > 0 warn net.packet_loss

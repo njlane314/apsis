@@ -96,7 +96,7 @@ nasa_coding_guardrails:
   agent_behavior:
     before_writing_or_modifying_code:
       - "Determine whether the code is safety-critical, mission-critical, security-sensitive, embedded, real-time, flight, ground, test-only, or general application code."
-      - "Locate the project coding standard. Prefer repository files such as CODING_STANDARD.md, CONTRIBUTING.md, lint/static-analysis configs, compiler flags, and waiver logs."
+      - "Locate the project coding standard. Prefer repository files such as STANDARD.md, CONTRIBUTING.md, lint/static-analysis configs, compiler flags, and waiver logs."
       - "If no standard exists, create or propose a project-local coding standard profile before making broad code changes."
       - "Never state that code is NASA-compliant unless required evidence exists."
 
