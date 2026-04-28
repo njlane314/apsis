@@ -1,0 +1,59 @@
+TRIP
+
+PURPOSE
+Check numeric telemetry in CI.
+
+Programs emit key=value lines. trip checks them against rules, emits plain text
+events, and exits nonzero when an error rule trips.
+
+USAGE
+cc -std=c99 -Wall -Wextra -O2 trip.c -o trip
+./some_test_or_benchmark | ./trip -r .trip/rules.trip
+
+RULES
+Format:
+
+key op number level event_id
+
+Examples:
+
+frame.ms              > 16.6    warn   frame.slow
+queue.depth           > 1000    error  queue.backpressure
+tokens.per_second     < 50      error  inference.too_slow
+heartbeat             stale 5s  error  heartbeat.missing
+temperature           > 80      warn   temperature.high cooldown 10s
+
+Operators:
+
+> >= < <= == != stale
+
+Levels:
+
+info warn error
+
+INPUT
+Accepted forms:
+
+frame.ms=18.7
+queue.depth 1402
+
+OUTPUT
+Tab-separated events on stdout:
+
+warn	frame.slow	frame.ms	>	16.600000000000001	18.699999999999999
+
+Exit status:
+
+0  no failing rule
+1  failing warn/error rule, depending on --fail-on
+2  invalid input, rule, or argument
+
+BUILD
+make
+make test
+
+EMBEDDING
+Compile with -DTRIP_NO_MAIN and include trip.h from a C or C++ test harness.
+
+LICENSE
+MIT.
