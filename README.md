@@ -54,9 +54,15 @@ cc -std=c99 -Wall -Wextra -O2 lim.c -o lim
 
 ## GitHub Actions
 
-A copy-paste workflow example is available at `examples/github-actions/lim-check.yml`.
+Copy-paste deployment examples are available in `examples/github-actions/`.
 
-It builds `lim`, checks telemetry against `examples/rules.lim`, writes JSONL events to the GitHub Actions step summary, uploads `lim-events.jsonl` as an artifact, and fails the workflow when an `error` rule trips.
+The common pattern is:
+
+```sh
+./my_test_or_benchmark | ./lim -r .groundline/rules.lim
+```
+
+The example workflow builds `lim`, checks generated telemetry against `.groundline/rules.lim`, writes JSONL events to the GitHub Actions step summary, uploads telemetry artifacts, and fails the workflow when an `error` rule trips.
 
 ## Rule format
 

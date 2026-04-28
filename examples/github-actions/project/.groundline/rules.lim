@@ -1,0 +1,6 @@
+# key                 op  threshold  level  event-id
+frame.ms              >   16.6       warn   frame.slow
+queue.depth           >   1000       error  queue.backpressure
+binary.bytes          >   5000000    error  binary.too_large
+tokens.per_second     <   50         error  inference.too_slow
+parse.gbps            <   2.5        error  parser.too_slow
