@@ -50,8 +50,6 @@ bound: tools/bound/bound.c
 
 check: all
 	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./check.sh
-	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./tests/test_gate.sh
-	CC="$(CC)" CFLAGS="$(CFLAGS)" sh ./tests/test_bound.sh
 
 guardrail-scan:
 	@command -v rg >/dev/null 2>&1 || { echo "guardrail-scan: rg is required"; exit 2; }

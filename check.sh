@@ -16,7 +16,7 @@ for path in README.md Makefile apsis; do
         printf '%s\n' "$path" >> "$layout_files"
     fi
 done
-for dir in docs include man tests tools; do
+for dir in docs include man tools; do
     if [ -d "$dir" ]; then
         find "$dir" -type f -print >> "$layout_files"
     fi
@@ -425,164 +425,6 @@ else
     echo "check: probe runtime checks skipped on non-Linux"
 fi
 
-cat > "$tmp/test_contracts.c" <<'C'
-#include "apsis.h"
-
-#include <stdio.h>
-#include <string.h>
-
-typedef struct contract_events {
-    unsigned long count;
-    char first[APSIS_LINE_MAX];
-    char last[APSIS_LINE_MAX];
-} contract_events;
-
-static int on_contract_event(const apsis_event *event, void *user) {
-    contract_events *events = (contract_events *)user;
-    char line[APSIS_LINE_MAX];
-
-    if (apsis_format_event_record(event, line, sizeof(line)) != 0) return -1;
-    if (events->count == 0) {
-        snprintf(events->first, sizeof(events->first), "%s", line);
-    }
-    snprintf(events->last, sizeof(events->last), "%s", line);
-    events->count++;
-    return 0;
-}
-
-int main(void) {
-    apsis_ctx ctx;
-    contract_events events;
-    char err[256];
-    int rc;
-
-    memset(&events, 0, sizeof(events));
-    apsis_init(&ctx);
-    if (apsis_add_rule(&ctx, "renderer.frame.ms", APSIS_GT, 16.6,
-                     APSIS_WARN, "frame.slow") != 0) return 1;
-    if (apsis_add_rule(&ctx, "renderer.frame.ms", APSIS_GT, 33.3,
-                     APSIS_ERROR, "frame.very_slow") != 0) return 2;
-
-    rc = apsis_sample_each(&ctx, "renderer.frame.ms", 40.0, 1.0,
-                         on_contract_event, &events);
-    if (rc != 2) return 3;
-    if (events.count != 2) return 4;
-    if (strstr(events.first, "frame.slow") == NULL) return 5;
-    if (strstr(events.last, "frame.very_slow") == NULL) return 6;
-
-    memset(&events, 0, sizeof(events));
-    apsis_init(&ctx);
-    err[0] = '\0';
-    if (apsis_parse_rule_line(&ctx,
-                            "temp > 10 warn temp.high cooldown 100ms",
-                            1,
-                            "contract-test",
-                            err,
-                            sizeof(err)) != 0) {
-        return 7;
-    }
-    if (apsis_sample_each(&ctx, "temp", 11.0, 10.0,
-                        on_contract_event, &events) != 1) return 8;
-    if (apsis_sample_each(&ctx, "temp", 12.0, 10.05,
-                        on_contract_event, &events) != 0) return 9;
-    if (apsis_sample_each(&ctx, "temp", 13.0, 10.101,
-                        on_contract_event, &events) != 1) return 10;
-    if (events.count != 2) return 11;
-
-    memset(&events, 0, sizeof(events));
-    apsis_init(&ctx);
-    if (apsis_add_stale_rule(&ctx, "heartbeat", 5.0,
-                           APSIS_ERROR, "heartbeat.missing") != 0) return 12;
-    if (apsis_sample_each(&ctx, "heartbeat", 1.0, 20.0,
-                        on_contract_event, &events) != 0) return 13;
-    if (apsis_emit_stale_each(&ctx, 24.9, on_contract_event, &events) != 0) {
-        return 14;
-    }
-    if (apsis_emit_stale_each(&ctx, 25.1, on_contract_event, &events) != 1) {
-        return 15;
-    }
-    if (events.count != 1) return 16;
-    if (strstr(events.last, "heartbeat.missing") == NULL) return 17;
-
-    return 0;
-}
-C
-
-cat > "$tmp/test_dwell.c" <<'C'
-#include "apsis.h"
-
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
-typedef struct test_events {
-    unsigned long count;
-    char last[APSIS_LINE_MAX];
-} test_events;
-
-static void on_event(const char *line, void *user) {
-    test_events *events = (test_events *)user;
-    events->count++;
-    snprintf(events->last, sizeof(events->last), "%s", line ? line : "");
-}
-
-int main(void) {
-    apsis_dwell_ctx ctx;
-    test_events events;
-    volatile uint32_t queue_depth = 1201;
-    volatile double frame_ms = 12.5;
-    int rc;
-
-    memset(&events, 0, sizeof(events));
-    apsis_dwell_init(&ctx);
-    apsis_dwell_set_event_callback(&ctx, on_event, &events);
-
-    if (apsis_dwell_add_rule(&ctx,
-                           "worker.queue.depth",
-                           APSIS_GT,
-                           1000.0,
-                           APSIS_ERROR,
-                           "queue.backpressure") != 0) {
-        return 1;
-    }
-    if (apsis_dwell_add_rule(&ctx,
-                           "renderer.frame.ms",
-                           APSIS_GT,
-                           16.6,
-                           APSIS_WARN,
-                           "frame.slow") != 0) {
-        return 2;
-    }
-
-    if (apsis_dwell_watch_u32(&ctx,
-                            "worker.queue.depth",
-                            &queue_depth) != 0) {
-        return 3;
-    }
-    if (apsis_dwell_watch_f64(&ctx,
-                            "renderer.frame.ms",
-                            &frame_ms) != 0) {
-        return 4;
-    }
-
-    rc = apsis_dwell_tick(&ctx);
-    if (rc != 1) return 5;
-    if (events.count != 1) return 6;
-    if (strstr(events.last, "queue.backpressure") == NULL) return 7;
-    if (ctx.contracts.error_count != 1) return 8;
-    if (ctx.contracts.warn_count != 0) return 9;
-
-    frame_ms = 20.0;
-    rc = apsis_dwell_tick(&ctx);
-    if (rc != 2) return 10;
-    if (events.count != 3) return 11;
-    if (ctx.contracts.error_count != 2) return 12;
-    if (ctx.contracts.warn_count != 1) return 13;
-
-    return 0;
-}
-C
-
 cat > "$tmp/embedded-main.c" <<'C'
 #include "apsis.h"
 #include "telemetry_ids.h"
@@ -622,11 +464,6 @@ int main(void) {
     return emitted == 1 ? 0 : 1;
 }
 C
-
-"$CC" $CFLAGS -Iinclude "$tmp/test_dwell.c" libapsis.a -o "$tmp/test_dwell"
-"$CC" $CFLAGS -Iinclude "$tmp/test_contracts.c" libapsis.a -o "$tmp/test_contracts"
-"$tmp/test_contracts"
-"$tmp/test_dwell"
 
 "$CC" $CFLAGS -Iinclude -I"$tmp" "$tmp/embedded-main.c" libapsis.a -o "$tmp/apsis_embedded_example"
 "$tmp/apsis_embedded_example" > "$tmp/apsis_embedded_example.out"

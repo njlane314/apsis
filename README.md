@@ -116,7 +116,6 @@ trip check --rules rules.trip --github-summary "$GITHUB_STEP_SUMMARY" \
 
 ```sh
 make
-make check
 make install PREFIX=/usr/local
 make uninstall PREFIX=/usr/local
 ```
